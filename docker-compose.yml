@@ -1,0 +1,60 @@
+# Docker Compose configuration for SoulSync Frontend
+version: '3.8'
+
+services:
+  # Production build
+  soulsync-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        - NODE_ENV=production
+        - VITE_API_URL=https://api.soulsync.solutions/api
+        - VITE_APP_URL=https://soulsync.solutions
+        - VITE_ENVIRONMENT=production
+    container_name: soulsync-frontend-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - soulsync-network
+
+  # Development server (alternative service)
+  soulsync-frontend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: soulsync-frontend-dev
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:5001/api
+      - VITE_APP_URL=http://localhost:5173
+      - VITE_ENVIRONMENT=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+    profiles:
+      - development
+    networks:
+      - soulsync-network
+
+networks:
+  soulsync-network:
+    driver: bridge
+    external: false
+
+volumes:
+  frontend_node_modules:

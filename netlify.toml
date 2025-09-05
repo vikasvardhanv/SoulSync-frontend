@@ -1,0 +1,92 @@
+# Netlify Configuration for SoulSync Frontend
+
+[build]
+  # Build command for production
+  command = "npm run build:production"
+  
+  # Directory to publish
+  publish = "dist"
+  
+  # Environment variables for build
+  [build.environment]
+    NODE_VERSION = "18"
+    NPM_VERSION = "8"
+
+[context.production]
+  environment = { NODE_ENV = "production", VITE_ENVIRONMENT = "production" }
+
+[context.deploy-preview]
+  environment = { NODE_ENV = "staging", VITE_ENVIRONMENT = "staging" }
+
+[context.branch-deploy]
+  environment = { NODE_ENV = "development", VITE_ENVIRONMENT = "development" }
+
+# Redirects for Single Page Application
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for security and performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+
+# Cache control for static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache control for HTML
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# API proxy (if needed for development)
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://api.soulsync.solutions/api/:splat"
+#   status = 200
+#   force = true
+
+# Custom domain settings
+# [[redirects]]
+#   from = "https://soulsync.netlify.app/*"
+#   to = "https://soulsync.solutions/:splat"
+#   status = 301
+#   force = true
+
+# Form handling (if using Netlify forms)
+# [[redirects]]
+#   from = "/contact"
+#   to = "/contact-success"
+#   status = 200
+#   conditions = {Role = ["form-submission"]}
+
+# Plugin configurations
+# [[plugins]]
+#   package = "@netlify/plugin-sitemap"
+#   [plugins.inputs]
+#     baseUrl = "https://soulsync.solutions"
+
+# [[plugins]]
+#   package = "netlify-plugin-minify-html"
+#   [plugins.inputs]
+#     contexts = ["production"]
