@@ -86,7 +86,6 @@
       "VITE_ENVIRONMENT": "production"
     }
   },
-  "functions": {},
   "regions": ["iad1"],
   "public": false,
   "github": {
