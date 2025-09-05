@@ -1,15 +1,4 @@
 {
-  "version": 2,
-  "name": "soulsync-frontend",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
   "rewrites": [
     {
       "source": "/(.*)",
@@ -18,7 +7,7 @@
   ],
   "headers": [
     {
-      "source": "/.*",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "X-Content-Type-Options",
@@ -48,7 +37,7 @@
       ]
     },
     {
-      "source": "/(.*).js",
+      "source": "/(.*)\\.js",
       "headers": [
         {
           "key": "Cache-Control",
@@ -57,7 +46,7 @@
       ]
     },
     {
-      "source": "/(.*).css",
+      "source": "/(.*)\\.css",
       "headers": [
         {
           "key": "Cache-Control",
@@ -66,7 +55,7 @@
       ]
     },
     {
-      "source": "/(.*).html",
+      "source": "/(.*)\\.html",
       "headers": [
         {
           "key": "Cache-Control",
@@ -74,18 +63,5 @@
         }
       ]
     }
-  ],
-  "env": {
-    "VITE_ENVIRONMENT": "production"
-  },
-  "build": {
-    "env": {
-      "VITE_ENVIRONMENT": "production"
-    }
-  },
-  "regions": ["iad1"],
-  "public": false,
-  "github": {
-    "autoAlias": false
-  }
+  ]
 }
