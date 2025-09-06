@@ -4,9 +4,6 @@ import toast from 'react-hot-toast';
 
 // Determine API URL based on environment
 const getApiUrl = () => {
-  // TEMPORARY: Force localhost for testing - CHANGE THIS BACK LATER
-  return 'http://localhost:5001/api';
-  
   // In development, use localhost
   if (import.meta.env.DEV) {
     return 'http://localhost:5001/api';
