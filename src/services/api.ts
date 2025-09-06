@@ -4,13 +4,9 @@ import toast from 'react-hot-toast';
 
 // Determine API URL based on environment
 const getApiUrl = () => {
-  // In development, use localhost
-  if (import.meta.env.DEV) {
-    return 'http://localhost:5001/api';
-  }
-  
-  // In production, use the same domain (Vercel will handle routing)
-  return '/api';
+  // For now, always use localhost since Vercel backend has auth protection
+  // TODO: Fix Vercel deployment protection and switch back to production URL
+  return 'http://localhost:5001/api';
 };
 
 const API_BASE_URL = getApiUrl();
