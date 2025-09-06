@@ -4,13 +4,13 @@ import toast from 'react-hot-toast';
 
 // Determine API URL based on environment
 const getApiUrl = () => {
-  // In development, use localhost
+  // Check if we're in development mode
   if (import.meta.env.DEV) {
     return 'http://localhost:5001/api';
   }
   
-  // In production, use the same domain (Vercel will handle routing)
-  return '/api';
+  // In production, use the latest working Vercel backend domain
+  return 'https://soulsync.solutions/api';
 };
 
 const API_BASE_URL = getApiUrl();
@@ -277,3 +277,11 @@ export const adminAPI = {
 };
 
 export default api;
+
+export const resolveImageUrl = (img: any): string => {
+  if (!img) return '';
+  if (typeof img === 'string') return img;
+  return img?.signedUrl || img?.imageUrl || '';
+};
+
+export const getSignedImageUrl = resolveImageUrl;

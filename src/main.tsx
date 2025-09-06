@@ -1,7 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
-import './index.css';
+import './index.css'
+import './shims/image-url';
 
 // Fix for _.info error - define comprehensive global _ object before any modules load
 if (typeof (window as any)._ === 'undefined') {
@@ -80,6 +81,15 @@ if (typeof (window as any)._ === 'undefined') {
   });
   
   console.info('✅ Mock lodash initialized to prevent _.info errors');
+}
+
+// Log configured API URL for debugging startup/runtime
+try {
+  // eslint-disable-next-line no-console
+  console.log('API URL:', import.meta.env.VITE_API_URL);
+} catch (e) {
+  // import.meta may not be available in some test environments
+  console.warn('Could not read VITE_API_URL at startup', e);
 }
 
 createRoot(document.getElementById('root')!).render(
