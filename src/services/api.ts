@@ -1,26 +1,29 @@
 // frontend/src/services/api.ts
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import toast from 'react-hot-toast';
 
 // Determine API URL based on environment
 const getApiUrl = () => {
-  // In development, use localhost
+  // Check if we're in development mode
   if (import.meta.env.DEV) {
-    return 'http://localhost:5001/api';
+    return import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
   }
   
-  // In production, use the same domain (Vercel will handle routing)
-  return '/api';
+  // In production, use the backend domain
+  return import.meta.env.VITE_API_URL || 'https://soulsync.solutions/api';
 };
 
 const API_BASE_URL = getApiUrl();
+
+console.log('🌐 API Base URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: false,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  timeout: 30000 // 30 second timeout
 });
 
 // Add auth token to requests
@@ -30,26 +33,87 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Log outgoing requests in development
+    if (import.meta.env.DEV) {
+      console.log('📤 API Request:', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        hasAuth: !!token,
+        data: config.data ? Object.keys(config.data) : null
+      });
+    }
+    
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('❌ Request interceptor error:', error);
+    return Promise.reject(error);
+  }
 );
 
+// Enhanced response interceptor with better error handling
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  (response) => {
+    // Log successful responses in development
+    if (import.meta.env.DEV) {
+      console.log('📥 API Response:', {
+        method: response.config.method?.toUpperCase(),
+        url: response.config.url,
+        status: response.status,
+        success: response.data?.success
+      });
+    }
+    return response;
+  },
+  async (error: AxiosError<any>) => {
     const original = error.config;
     const status = error.response?.status;
     const message = error.response?.data?.message || 'An error occurred';
     const errorType = error.response?.data?.error?.type;
     const suggestion = error.response?.data?.error?.suggestion || '';
 
-    console.error('API Error:', { status, message, errorType, url: original?.url });
+    console.error('❌ API Error:', { 
+      status, 
+      message, 
+      errorType, 
+      url: original?.url,
+      method: original?.method?.toUpperCase()
+    });
 
-    // Handle specific errors
+    // Handle timeout errors
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      toast.error('Request timed out. Please check your connection and try again.', {
+        duration: 5000
+      });
+      return Promise.reject(error);
+    }
+
+    // Handle network errors
+    if (!error.response) {
+      toast.error('Network error. Please check your internet connection.', {
+        duration: 5000
+      });
+      return Promise.reject(error);
+    }
+
+    // Handle specific HTTP status codes
     switch (status) {
+      case 400:
+        // Bad request - validation errors
+        if (error.response?.data?.errors) {
+          // Multiple validation errors
+          const errorMessages = error.response.data.errors
+            .map((err: any) => err.message || err.msg)
+            .join(', ');
+          toast.error(`Validation error: ${errorMessages}`, { duration: 6000 });
+        } else {
+          toast.error(message + (suggestion ? ` ${suggestion}` : ''), { duration: 5000 });
+        }
+        break;
+
       case 401:
-        // Don't redirect during signup/login flow or for optional auth endpoints
+        // Unauthorized - handle based on context
         const isAuthFlow = window.location.pathname.includes('/signup') || 
                           window.location.pathname.includes('/login') || 
                           window.location.pathname.includes('/register');
@@ -57,34 +121,76 @@ api.interceptors.response.use(
                               original?.url?.includes('/users/potential-matches');
         
         if (isAuthFlow || isOptionalAuth) {
-          // For signup flow and optional auth endpoints, just show error without redirect
-          console.warn('Auth error during signup flow or optional auth endpoint:', { url: original?.url, message });
-          // Don't show toast error for image upload during signup - let component handle it
-          if (!original?.url?.includes('/images/upload')) {
-            toast.error(message, { duration: 4000 });
-          }
+          // For signup flow and optional auth endpoints, just log the error
+          console.warn('⚠️ Auth error during signup/optional endpoint:', { 
+            url: original?.url, 
+            message 
+          });
         } else {
           // Normal 401 handling for authenticated routes
-          toast.error('Please log in to continue. ' + suggestion, { duration: 6000 });
-          if (!original._retry && errorType !== 'AUTH_TOKEN_INVALID') {
+          toast.error('Session expired. Please log in again.', { duration: 5000 });
+          
+          if (!original?._retry) {
             original._retry = true;
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
-            window.location.href = '/login';
+            
+            // Redirect to login after short delay
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 1500);
           }
         }
         break;
-      case 413:
-        toast.error(`${message} ${suggestion}`, { duration: 6000 });
+
+      case 403:
+        // Forbidden
+        toast.error('Access denied. ' + (suggestion || 'You don\'t have permission to perform this action.'), {
+          duration: 5000
+        });
         break;
+
       case 404:
-        toast.error('API endpoint not found. Please try again later.', { duration: 6000 });
+        // Not found
+        if (original?.url?.includes('/api/')) {
+          toast.error('Resource not found. Please try again.', { duration: 4000 });
+        }
         break;
+
+      case 409:
+        // Conflict
+        toast.error(message, { duration: 5000 });
+        break;
+
+      case 413:
+        // Payload too large
+        toast.error(`${message} ${suggestion || 'Please reduce the file size and try again.'}`, {
+          duration: 6000
+        });
+        break;
+
+      case 429:
+        // Too many requests
+        toast.error('Too many requests. Please slow down and try again in a moment.', {
+          duration: 6000
+        });
+        break;
+
       case 500:
-        toast.error('Server error. Please try again or contact support.', { duration: 6000 });
+      case 502:
+      case 503:
+      case 504:
+        // Server errors
+        toast.error('Server error. Our team has been notified. Please try again later.', {
+          duration: 6000
+        });
         break;
+
       default:
-        toast.error(message, { duration: 6000 });
+        // Generic error message
+        toast.error(message || 'An unexpected error occurred. Please try again.', {
+          duration: 5000
+        });
     }
 
     return Promise.reject(error);
@@ -107,7 +213,7 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   deleteAccount: (data: { password: string; confirmation: string }) => 
     api.delete('/auth/delete-account', { data }),
-  updateProfile: (data: any) => api.put('/users/profile', data), // Added this method
+  updateProfile: (data: any) => api.put('/users/profile', data),
 };
 
 // Images API
@@ -277,3 +383,11 @@ export const adminAPI = {
 };
 
 export default api;
+
+export const resolveImageUrl = (img: any): string => {
+  if (!img) return '';
+  if (typeof img === 'string') return img;
+  return img?.signedUrl || img?.imageUrl || '';
+};
+
+export const getSignedImageUrl = resolveImageUrl;
