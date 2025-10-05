@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Check, Star, Zap, Heart, CreditCard, TestTube, Bitcoin, Coins } from 'lucide-react';
+import { Lock, Check, Star, Zap, CreditCard, TestTube, Bitcoin, Coins } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { useApp } from '../context/AppContext';
 import { paymentsAPI } from '../services/api';
@@ -92,7 +92,7 @@ const PaymentModal = () => {
   };
 
   // PayPal payment handlers
-  const createOrder = (data: any, actions: any) => {
+  const createOrder = (_data: any, actions: any) => {
     setIsProcessing(true);
     setPaymentError('');
     
@@ -111,7 +111,7 @@ const PaymentModal = () => {
     });
   };
 
-  const onApprove = async (data: any, actions: any) => {
+  const onApprove = async (_data: any, actions: any) => {
     try {
       const details = await actions.order.capture();
       
@@ -168,33 +168,40 @@ const PaymentModal = () => {
 
   if (paymentSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen warm-gradient flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-coral-200 rounded-full opacity-20 animate-bounce-gentle"></div>
+          <div className="absolute bottom-20 right-10 w-24 h-24 bg-mint-200 rounded-full opacity-30 animate-bounce-gentle" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-peach-200 rounded-full opacity-25 animate-bounce-gentle" style={{ animationDelay: '2s' }}></div>
+        </div>
+
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-md text-center"
+          className="w-full max-w-md text-center relative z-10"
         >
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring" }}
-            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full mb-6"
+            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-mint-400 to-mint-600 rounded-full mb-6 shadow-coral"
           >
             <Check className="w-10 h-10 text-white" />
           </motion.div>
 
-          <h1 className="text-3xl font-bold text-white mb-4">
+          <h1 className="text-3xl font-bold text-warm-800 mb-4">
             Payment Successful! 🎉
           </h1>
 
-          <p className="text-gray-300 text-lg mb-6">
+          <p className="text-warm-600 text-lg mb-6">
             Welcome to SoulSync! Let's find your perfect match.
           </p>
 
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="inline-block w-8 h-8 border-2 border-pink-400 border-t-transparent rounded-full"
+            className="inline-block w-8 h-8 border-2 border-coral-400 border-t-transparent rounded-full"
           />
         </motion.div>
       </div>
@@ -203,11 +210,19 @@ const PaymentModal = () => {
 
   return (
     <PayPalScriptProvider options={paypalOptions}>
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen warm-gradient flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-coral-200 rounded-full opacity-20 animate-bounce-gentle"></div>
+          <div className="absolute bottom-20 right-10 w-24 h-24 bg-mint-200 rounded-full opacity-30 animate-bounce-gentle" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-peach-200 rounded-full opacity-25 animate-bounce-gentle" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute top-1/3 right-1/4 w-20 h-20 bg-lavender-200 rounded-full opacity-20 animate-bounce-gentle" style={{ animationDelay: '0.5s' }}></div>
+        </div>
+
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-md"
+          className="w-full max-w-md relative z-10"
         >
           {/* Header */}
           <div className="text-center mb-8">
@@ -215,26 +230,26 @@ const PaymentModal = () => {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring" }}
-              className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full mb-4"
+              className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-coral-400 to-peach-400 rounded-full mb-4 shadow-coral"
             >
               <Lock className="w-10 h-10 text-white" />
             </motion.div>
             
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl font-bold text-warm-800 mb-2">
               Limited Launch Offer
             </h1>
             
-            <p className="text-gray-300 mb-4">
+            <p className="text-warm-600 mb-4">
               Unlock SoulSync AI Matchmaking & Premium Chat
             </p>
             
-            <div className="bg-gradient-to-r from-pink-500/20 to-purple-600/20 border border-pink-500/30 rounded-xl p-4 mb-6">
+            <div className="bg-white/90 backdrop-blur-sm border border-coral-200 rounded-xl p-4 mb-6 shadow-soft">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <Star className="w-5 h-5 text-yellow-400" fill="currentColor" />
-                <span className="text-2xl font-bold text-white">$10</span>
-                <span className="text-gray-400 line-through">$29</span>
+                <Star className="w-5 h-5 text-coral-500" fill="currentColor" />
+                <span className="text-2xl font-bold text-warm-800">$10</span>
+                <span className="text-warm-400 line-through">$29</span>
               </div>
-              <p className="text-sm text-gray-300">
+              <p className="text-sm text-warm-600">
                 We're invite-only. Your payment ensures real users & accurate matching.
               </p>
             </div>
@@ -245,10 +260,10 @@ const PaymentModal = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 mb-6"
+            className="bg-white/90 backdrop-blur-sm border border-peach-200 rounded-2xl p-6 mb-6 shadow-soft"
           >
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-yellow-400" />
+            <h3 className="text-lg font-semibold text-warm-800 mb-4 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-coral-500" />
               What You Get:
             </h3>
             
@@ -267,8 +282,8 @@ const PaymentModal = () => {
                   transition={{ delay: 0.6 + index * 0.1 }}
                   className="flex items-center gap-3"
                 >
-                  <Check className="w-5 h-5 text-green-400" />
-                  <span className="text-gray-300">{feature}</span>
+                  <Check className="w-5 h-5 text-mint-500" />
+                  <span className="text-warm-700">{feature}</span>
                 </motion.div>
               ))}
             </div>
@@ -279,12 +294,12 @@ const PaymentModal = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6"
+            className="bg-white/90 backdrop-blur-sm border border-mint-200 rounded-2xl p-6 shadow-soft"
           >
             {/* Payment Method Selection */}
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                <CreditCard className="w-5 h-5" />
+              <h3 className="text-lg font-semibold text-warm-800 mb-3 flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-coral-500" />
                 Payment Method
               </h3>
               
@@ -295,12 +310,12 @@ const PaymentModal = () => {
                   onClick={() => setPaymentMethod('crypto')}
                   className={`p-3 rounded-xl border-2 transition-all text-center ${
                     paymentMethod === 'crypto'
-                      ? 'border-orange-500 bg-orange-500/20 text-white'
-                      : 'border-white/20 bg-white/5 text-gray-300 hover:border-orange-400'
+                      ? 'border-coral-400 bg-coral-50 text-warm-800 shadow-soft'
+                      : 'border-warm-200 bg-white hover:border-coral-300 text-warm-600'
                   }`}
                 >
                   <Bitcoin className="w-6 h-6 mx-auto mb-2" />
-                  <div className="font-medium">Crypto</div>
+                  <div className="font-medium text-sm">Crypto</div>
                   <div className="text-xs opacity-75">Recommended</div>
                 </motion.button>
                 
@@ -310,12 +325,12 @@ const PaymentModal = () => {
                   onClick={() => setPaymentMethod('paypal')}
                   className={`p-3 rounded-xl border-2 transition-all text-center ${
                     paymentMethod === 'paypal'
-                      ? 'border-blue-500 bg-blue-500/20 text-white'
-                      : 'border-white/20 bg-white/5 text-gray-300 hover:border-blue-400'
+                      ? 'border-peach-400 bg-peach-50 text-warm-800 shadow-soft'
+                      : 'border-warm-200 bg-white hover:border-peach-300 text-warm-600'
                   }`}
                 >
                   <CreditCard className="w-6 h-6 mx-auto mb-2" />
-                  <div className="font-medium">PayPal</div>
+                  <div className="font-medium text-sm">PayPal</div>
                   <div className="text-xs opacity-75">Fallback</div>
                 </motion.button>
                 
@@ -325,12 +340,12 @@ const PaymentModal = () => {
                   onClick={() => setPaymentMethod('nowpayments')}
                   className={`p-3 rounded-xl border-2 transition-all text-center ${
                     paymentMethod === 'nowpayments'
-                      ? 'border-blue-500 bg-blue-500/20 text-white'
-                      : 'border-white/20 bg-white/5 text-gray-300 hover:border-blue-400'
+                      ? 'border-mint-400 bg-mint-50 text-warm-800 shadow-soft'
+                      : 'border-warm-200 bg-white hover:border-mint-300 text-warm-600'
                   }`}
                 >
                   <Coins className="w-6 h-6 mx-auto mb-2" />
-                  <div className="font-medium">NOW</div>
+                  <div className="font-medium text-sm">NOW</div>
                   <div className="text-xs opacity-75">Payments</div>
                 </motion.button>
                 
@@ -340,26 +355,28 @@ const PaymentModal = () => {
                   onClick={() => setPaymentMethod('demo')}
                   className={`p-3 rounded-xl border-2 transition-all text-center ${
                     paymentMethod === 'demo'
-                      ? 'border-green-500 bg-green-500/20 text-white'
-                      : 'border-white/20 bg-white/5 text-gray-300 hover:border-green-400'
+                      ? 'border-lavender-400 bg-lavender-50 text-warm-800 shadow-soft'
+                      : 'border-warm-200 bg-white hover:border-lavender-300 text-warm-600'
                   }`}
                 >
                   <TestTube className="w-6 h-6 mx-auto mb-2" />
-                  <div className="font-medium">Demo</div>
+                  <div className="font-medium text-sm">Demo</div>
                   <div className="text-xs opacity-75">Testing</div>
                 </motion.button>
               </div>
             </div>
 
             <div className="mb-4">
-              <h3 className="text-lg font-semibold text-white mb-2">
+              <h3 className="text-lg font-semibold text-warm-800 mb-2">
                 Secure Payment
               </h3>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-warm-600">
                 {paymentMethod === 'crypto' 
                   ? 'Pay securely with Bitcoin, Ethereum, or other cryptocurrencies'
                   : paymentMethod === 'paypal'
                   ? 'Pay securely with PayPal or credit card'
+                  : paymentMethod === 'nowpayments'
+                  ? 'Pay securely with multiple cryptocurrency options'
                   : 'Demo payment for testing purposes'
                 }
               </p>
@@ -369,9 +386,9 @@ const PaymentModal = () => {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-4"
+                className="bg-coral-100 border border-coral-300 rounded-lg p-3 mb-4"
               >
-                <p className="text-red-400 text-sm">{paymentError}</p>
+                <p className="text-coral-700 text-sm font-medium">{paymentError}</p>
               </motion.div>
             )}
 
@@ -380,16 +397,16 @@ const PaymentModal = () => {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-orange-500/20 border border-orange-500/30 rounded-lg p-3 mb-4"
+                className="bg-coral-50 border border-coral-200 rounded-lg p-3 mb-4"
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <Coins className="w-4 h-4 text-orange-400" />
-                  <span className="text-orange-400 text-sm font-medium">Crypto Payment</span>
+                  <Coins className="w-4 h-4 text-coral-500" />
+                  <span className="text-coral-700 text-sm font-medium">Crypto Payment</span>
                 </div>
-                <p className="text-gray-300 text-sm">
+                <p className="text-warm-700 text-sm">
                   Payment page opened in new tab. Please complete payment there.
                 </p>
-                <p className="text-gray-400 text-xs mt-1">
+                <p className="text-warm-500 text-xs mt-1">
                   Status: {paymentStatus === 'pending' ? 'Waiting for payment...' : paymentStatus}
                 </p>
               </motion.div>
@@ -401,7 +418,7 @@ const PaymentModal = () => {
                 whileTap={{ scale: 0.98 }}
                 onClick={createCryptoPayment}
                 disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white py-3 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-coral-400 to-peach-400 text-white py-3 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-coral transition-all flex items-center justify-center gap-2"
               >
                 <Bitcoin className="w-5 h-5" />
                 {isProcessing ? 'Creating Payment...' : 'Pay with Crypto ($10)'}
@@ -450,7 +467,7 @@ const PaymentModal = () => {
                 whileTap={{ scale: 0.98 }}
                 onClick={handleDemoPayment}
                 disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-mint-400 to-mint-600 text-white py-3 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-soft transition-all flex items-center justify-center gap-2"
               >
                 <TestTube className="w-5 h-5" />
                 {isProcessing ? 'Processing Demo Payment...' : 'Complete Demo Payment ($10)'}
@@ -466,21 +483,23 @@ const PaymentModal = () => {
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="inline-block w-5 h-5 border-2 border-pink-400 border-t-transparent rounded-full mr-2"
+                  className="inline-block w-5 h-5 border-2 border-coral-400 border-t-transparent rounded-full mr-2"
                 />
-                <span className="text-gray-300">
+                <span className="text-warm-600">
                   {paymentMethod === 'crypto' ? 'Creating crypto payment...' : 'Processing payment...'}
                 </span>
               </motion.div>
             )}
 
             <div className="mt-4 text-center">
-              <p className="text-xs text-gray-400 flex items-center justify-center gap-1">
+              <p className="text-xs text-warm-500 flex items-center justify-center gap-1">
                 <Lock className="w-3 h-3" />
                 {paymentMethod === 'crypto' 
                   ? 'Secured by Coinbase Commerce & blockchain technology'
                   : paymentMethod === 'paypal'
                   ? 'Secured by PayPal & 256-bit SSL encryption'
+                  : paymentMethod === 'nowpayments'
+                  ? 'Secured by NOWPayments & blockchain technology'
                   : 'Demo mode - No real payment processed'
                 }
               </p>
@@ -490,7 +509,7 @@ const PaymentModal = () => {
           <div className="mt-4 text-center">
             <button
               onClick={() => navigate(-1)}
-              className="text-gray-400 hover:text-white transition-colors text-sm"
+              className="text-warm-600 hover:text-warm-800 transition-colors text-sm font-medium"
             >
               ← Back to quiz
             </button>
