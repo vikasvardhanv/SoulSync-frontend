@@ -9,10 +9,14 @@ interface User {
   age?: number;
   bio?: string;
   location?: string;
+  gender?: string;
+  lookingFor?: string;
   interests?: string[];
   photos?: string[];
   isVerified?: boolean;
   isActive?: boolean;
+  personalityScore?: number;
+  questionsAnswered?: number;
 }
 
 interface Subscription {

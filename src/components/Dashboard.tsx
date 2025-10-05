@@ -257,13 +257,61 @@ const Dashboard = () => {
                 <Heart className="w-10 h-10 text-white" />
               </div>
               <h2 className="text-3xl font-friendly font-bold text-warm-800 mb-4">Your Matches</h2>
-              <p className="text-warm-600 mb-8 text-lg">No matches yet! Complete your personality quiz to find your perfect match.</p>
-              <button
-                onClick={() => navigate('/personality-quiz')}
-                className="friendly-button px-8 py-4 font-semibold text-lg"
-              >
-                Take Personality Quiz
-              </button>
+              
+              {user.personalityScore !== undefined && user.personalityScore > 0 ? (
+                <>
+                  <div className="mb-6">
+                    <div className="inline-flex items-center gap-3 bg-gradient-to-r from-coral-50 to-peach-50 px-6 py-3 rounded-full border-2 border-coral-200">
+                      <div className="text-3xl font-bold text-coral-600">{user.personalityScore}%</div>
+                      <div className="text-left">
+                        <p className="text-sm font-semibold text-warm-700">Personality Profile</p>
+                        <p className="text-xs text-warm-600">{user.questionsAnswered || 0} questions answered</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p className="text-warm-600 mb-6 text-lg">
+                    {user.personalityScore >= 80 
+                      ? "Great profile! You're ready to find amazing matches."
+                      : user.personalityScore >= 50
+                      ? "Good start! Answer more questions to improve your match quality."
+                      : "Let's build your personality profile for better matches!"}
+                  </p>
+                  
+                  <p className="text-warm-600 mb-8">
+                    {user.personalityScore >= 80 
+                      ? "Our AI is finding your best matches based on deep compatibility analysis."
+                      : "The more questions you answer, the better we can find your perfect match. Each answer helps our AI understand you better!"}
+                  </p>
+                  
+                  <button
+                    onClick={() => navigate('/personality-quiz')}
+                    className="friendly-button px-8 py-4 font-semibold text-lg"
+                  >
+                    {user.personalityScore >= 80 
+                      ? "Refine My Profile" 
+                      : user.personalityScore >= 50
+                      ? "Answer More Questions"
+                      : "Build My Personality Profile"}
+                  </button>
+                  
+                  {user.personalityScore < 80 && (
+                    <p className="text-sm text-warm-500 mt-4">
+                      💡 Tip: Answer {Math.ceil((50 - (user.questionsAnswered || 0)) * 0.8)} more questions to reach 80% and unlock premium matches!
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-warm-600 mb-8 text-lg">Start building your personality profile to discover compatible matches!</p>
+                  <button
+                    onClick={() => navigate('/personality-quiz')}
+                    className="friendly-button px-8 py-4 font-semibold text-lg"
+                  >
+                    Take Personality Quiz
+                  </button>
+                </>
+              )}
             </div>
           </motion.div>
         )}
