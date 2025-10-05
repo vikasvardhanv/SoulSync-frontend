@@ -36,13 +36,69 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       return 'Only JPEG, PNG, and WebP images are allowed';
     }
 
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    // Recommended max size per image for dating profile
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB (reduced for better performance)
     if (file.size > MAX_FILE_SIZE) {
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
-      return `File size (${fileSizeMB}MB) exceeds 5MB limit`;
+      return `Image too large (${fileSizeMB}MB). Please use images under 2MB. Tip: Compress your image or take a photo at lower resolution.`;
+    }
+
+    // Warn if file is very small (might be low quality)
+    const MIN_FILE_SIZE = 10 * 1024; // 10KB
+    if (file.size < MIN_FILE_SIZE) {
+      return 'Image quality too low. Please use a clearer photo that shows your face well.';
     }
 
     return null;
+  };
+
+  // Compress image before upload to reduce payload size
+  const compressImage = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Create canvas for compression
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            reject(new Error('Canvas not supported'));
+            return;
+          }
+
+          // Calculate new dimensions (max 1200px on longest side)
+          const MAX_DIMENSION = 1200;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height && width > MAX_DIMENSION) {
+            height = (height * MAX_DIMENSION) / width;
+            width = MAX_DIMENSION;
+          } else if (height > MAX_DIMENSION) {
+            width = (width * MAX_DIMENSION) / height;
+            height = MAX_DIMENSION;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Draw and compress
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to JPEG with quality setting
+          const quality = file.size > 1024 * 1024 ? 0.7 : 0.85; // Lower quality for large files
+          const compressedData = canvas.toDataURL('image/jpeg', quality);
+          
+          resolve(compressedData);
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
   };
 
 
@@ -73,62 +129,28 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       console.log(`Starting to process ${fileArray.length} files...`);
 
+      // Show processing toast
+      toast.loading('Compressing and processing images...', { duration: 2000 });
+
       // Process files using base64 API
       const uploadPromises = fileArray.map(async (file, index) => {
         console.log(`Processing file ${index + 1}/${fileArray.length}: ${file.name}`);
         
         try {
-          // Convert file to base64 with robust error handling
-          const base64Data = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            
-            // Set a timeout for file reading (30 seconds max)
-            const timeout = setTimeout(() => {
-              reject(new Error(`File reading timeout: ${file.name}`));
-            }, 30000);
-            
-            reader.onload = (e) => {
-              clearTimeout(timeout);
-              const result = e.target?.result;
-              if (typeof result === 'string' && result.startsWith('data:')) {
-                console.log(`✅ Successfully converted ${file.name} to base64 (${Math.round(result.length / 1024)}KB)`);
-                resolve(result);
-              } else {
-                console.error(`❌ Invalid result for ${file.name}:`, typeof result);
-                reject(new Error(`Invalid file data: ${file.name}`));
-              }
-            };
-            
-            reader.onerror = (e) => {
-              clearTimeout(timeout);
-              console.error(`❌ FileReader error for ${file.name}:`, e);
-              reject(new Error(`Cannot read file: ${file.name}. File may be corrupted.`));
-            };
-            
-            reader.onabort = () => {
-              clearTimeout(timeout);
-              console.error(`❌ File reading aborted: ${file.name}`);
-              reject(new Error(`File reading was cancelled: ${file.name}`));
-            };
-            
-            // Validate file before reading
-            if (!file || file.size === 0) {
-              clearTimeout(timeout);
-              reject(new Error(`Empty or invalid file: ${file.name}`));
-              return;
-            }
-            
-            // Start reading the file
-            try {
-              reader.readAsDataURL(file);
-            } catch (readError) {
-              clearTimeout(timeout);
-              reject(new Error(`Cannot start reading file: ${file.name}`));
-            }
-          });
+          // Compress image first to reduce payload size
+          console.log(`Compressing ${file.name} (${(file.size / 1024).toFixed(0)}KB)...`);
+          const base64Data = await compressImage(file);
+          
+          // Check compressed size
+          const compressedSizeKB = Math.round((base64Data.length * 3) / 4 / 1024);
+          console.log(`✅ Compressed ${file.name}: ${compressedSizeKB}KB`);
+          
+          if (compressedSizeKB > 1500) { // Warn if still over 1.5MB after compression
+            toast('⚠️ Image is still large. Consider using a smaller photo.', { duration: 3000 });
+          }
           
           // Try to upload via API if authenticated
-          const token = localStorage.getItem('accessToken'); // Fixed: should be accessToken, not token
+          const token = localStorage.getItem('accessToken');
           console.log('🔍 Debug: Checking for auth token:', token ? 'Found' : 'Not found');
           
           // FORCE API CALL FOR TESTING - Remove this after debugging
@@ -160,11 +182,17 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               
               if (uploadError.response?.status === 401) {
                 console.log(`Auth expired for ${file.name}, using local storage`);
-                // toast.info(`${file.name} saved locally - will sync after login`);
+              } else if (uploadError.response?.status === 413) {
+                const errorData = uploadError.response?.data?.error;
+                const suggestion = errorData?.suggestions?.[0] || 'Please use smaller images (under 2MB each)';
+                toast.error(
+                  `❌ Image too large! ${suggestion}`,
+                  { duration: 5000 }
+                );
+                throw new Error('Image size too large');
               } else {
                 const errorMessage = uploadError.response?.data?.message || uploadError.message;
                 console.log(`Upload failed for ${file.name}: ${errorMessage}`);
-                // toast.info(`${file.name} saved locally - will sync after login`);
               }
             }
           } else {
