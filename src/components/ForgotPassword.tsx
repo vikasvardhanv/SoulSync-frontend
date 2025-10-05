@@ -51,7 +51,7 @@ const ForgotPassword = () => {
          </p>
          
          <div className="bg-peach-50 border border-peach-200 rounded-lg p-4 mb-6">
-           <p className="text-sm text-warm-600">
+           <p className="text-sm text-warm-700">
              <strong>Didn't receive the email?</strong> Check your spam folder or 
              <button 
                onClick={() => setEmailSent(false)}

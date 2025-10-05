@@ -79,7 +79,7 @@ const NOWPaymentsButton: React.FC<NOWPaymentsButtonProps> = ({
   return (
     <button
       onClick={handleNOWPayments}
-      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+      className="w-full bg-gradient-to-r from-coral-400 to-peach-400 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-coral transition-all flex items-center justify-center gap-2"
     >
       <Coins className="w-5 h-5" />
       Pay with NOWPayments (${amount})

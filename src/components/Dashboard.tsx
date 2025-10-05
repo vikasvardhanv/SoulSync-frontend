@@ -8,11 +8,11 @@ import {
   LogOut, 
   MessageCircle, 
   Users, 
-  Star,
   Bell,
   Search
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
+import MatchNotifications from './MatchNotifications';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('discover');
@@ -108,10 +108,7 @@ const Dashboard = () => {
 
             {/* User Menu */}
             <div className="flex items-center space-x-4">
-              <button className="relative p-2 text-warm-700 hover:text-warm-900 hover:bg-white/20 rounded-lg transition-all">
-                <Bell className="w-6 h-6" />
-                <div className="absolute top-1 right-1 w-2 h-2 bg-coral-500 rounded-full"></div>
-              </button>
+              <MatchNotifications />
               
               <div className="relative group">
                 <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/20 transition-all">
@@ -155,31 +152,82 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-8">
-        {/* Debug Info */}
-        <div className="friendly-card p-4 mb-6 bg-blue-50 border-blue-200">
-          <h3 className="font-semibold text-blue-800 mb-2">Debug Information</h3>
-          <p className="text-blue-700 text-sm">User ID: {user.id}</p>
-          <p className="text-blue-700 text-sm">User Name: {user.name}</p>
-          <p className="text-blue-700 text-sm">User Email: {user.email}</p>
-          <p className="text-blue-700 text-sm">Active Tab: {activeTab}</p>
-        </div>
-
         {activeTab === 'discover' && (
           <div className="space-y-6">
-            {/* Profile Summary */}
+            {/* User Profile Card */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="friendly-card p-6"
             >
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-coral-400 to-peach-400 rounded-full flex items-center justify-center shadow-coral">
-                  <User className="w-8 h-8 text-white" />
+              <div className="flex flex-col md:flex-row gap-6">
+                {/* Profile Picture */}
+                <div className="flex-shrink-0">
+                  {user.photos && user.photos.length > 0 && user.photos[0] ? (
+                    <img
+                      src={user.photos[0]}
+                      alt={user.name}
+                      className="w-32 h-32 rounded-2xl object-cover shadow-coral border-4 border-white"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 bg-gradient-to-br from-coral-400 to-peach-400 rounded-2xl flex items-center justify-center shadow-coral">
+                      <User className="w-16 h-16 text-white" />
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <h2 className="text-2xl font-friendly font-bold text-warm-800">{user.name || 'Unknown User'}</h2>
-                  <p className="text-warm-600">{user.age || 'Unknown age'} years old • {user.location || 'Unknown location'}</p>
-                  <p className="text-warm-700 mt-2">{user.bio || 'No bio available'}</p>
+
+                {/* Profile Info */}
+                <div className="flex-grow">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-2xl font-friendly font-bold text-warm-800">{user.name || 'Unknown User'}</h2>
+                      <p className="text-warm-600 mt-1">
+                        {user.age ? `${user.age} years old` : 'Age not set'} • {user.location || 'Location not set'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => navigate('/profile')}
+                      className="px-4 py-2 bg-white/50 hover:bg-white/80 text-warm-700 rounded-lg transition-all font-medium border border-warm-200"
+                    >
+                      Edit Profile
+                    </button>
+                  </div>
+                  
+                  <p className="text-warm-700 mt-4">{user.bio || 'No bio yet. Tell others about yourself!'}</p>
+                  
+                  {/* Interests */}
+                  {user.interests && user.interests.length > 0 && (
+                    <div className="mt-4">
+                      <h3 className="text-sm font-semibold text-warm-600 mb-2">Interests</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {user.interests.map((interest, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-coral-50 text-coral-700 rounded-full text-sm font-medium"
+                          >
+                            {interest}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Photo Gallery */}
+                  {user.photos && user.photos.length > 1 && (
+                    <div className="mt-4">
+                      <h3 className="text-sm font-semibold text-warm-600 mb-2">Photos</h3>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {user.photos.slice(1).map((photo, index) => (
+                          <img
+                            key={index}
+                            src={photo}
+                            alt={`${user.name} - ${index + 2}`}
+                            className="w-20 h-20 rounded-lg object-cover border-2 border-white shadow-sm"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
