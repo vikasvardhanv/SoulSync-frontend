@@ -54,6 +54,7 @@ interface AuthState {
   checkAuth: () => Promise<void>;
   
   updateProfile: (updates: Partial<User>) => Promise<void>;
+  updateUser: (user: Partial<User>) => void;
   
   verifyEmail: (token: string) => Promise<void>;
   resendVerification: () => Promise<void>;
@@ -576,6 +577,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return true;
     } catch {
       return false;
+    }
+  },
+
+  updateUser: (userData: Partial<User>) => {
+    const currentUser = get().user;
+    if (currentUser) {
+      set({ user: { ...currentUser, ...userData } });
     }
   },
 
