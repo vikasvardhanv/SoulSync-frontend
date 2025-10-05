@@ -57,7 +57,7 @@ const AIMatching = () => {
       const { matches } = response.data.data;
       
       if (matches.length === 0) {
-        setError('No potential matches found. Please try again later.');
+        setError('No potential matches found right now. Don\'t worry! We\'ll notify you when we find compatible matches based on your personality score.');
         return null;
       }
 
@@ -197,13 +197,9 @@ const AIMatching = () => {
     return () => clearInterval(timer);
   }, [steps, fetchPotentialMatches, state.rejectedMatches, state.compatibilityAnswers, dispatch, navigate, calculateCompatibilityScore]);
 
-  // Retry function
+  // Retry function - go back to dashboard
   const handleRetry = () => {
-    setError(null);
-    setProgress(0);
-    setCurrentStep(0);
-    // Restart the matching process
-    window.location.reload();
+    navigate('/dashboard');
   };
 
   // Show error state
@@ -255,7 +251,7 @@ const AIMatching = () => {
             onClick={handleRetry}
             className="friendly-button font-semibold px-8 py-3"
           >
-            Try Again
+            Back to Dashboard
           </motion.button>
         </motion.div>
       </div>

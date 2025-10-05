@@ -247,17 +247,48 @@ const Dashboard = () => {
         )}
 
         {activeTab === 'matches' && (
-          <div className="text-center py-20">
-            <h2 className="text-2xl font-friendly font-bold text-warm-800 mb-4">Your Matches</h2>
-            <p className="text-warm-600">This feature is coming soon!</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-20"
+          >
+            <div className="friendly-card p-12 max-w-2xl mx-auto">
+              <div className="w-20 h-20 bg-gradient-to-br from-coral-400 to-peach-400 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Heart className="w-10 h-10 text-white" />
+              </div>
+              <h2 className="text-3xl font-friendly font-bold text-warm-800 mb-4">Your Matches</h2>
+              <p className="text-warm-600 mb-8 text-lg">No matches yet! Complete your personality quiz to find your perfect match.</p>
+              <button
+                onClick={() => navigate('/personality-quiz')}
+                className="friendly-button px-8 py-4 font-semibold text-lg"
+              >
+                Take Personality Quiz
+              </button>
+            </div>
+          </motion.div>
         )}
 
         {activeTab === 'messages' && (
-          <div className="text-center py-20">
-            <h2 className="text-2xl font-friendly font-bold text-warm-800 mb-4">Messages</h2>
-            <p className="text-warm-600">This feature is coming soon!</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-20"
+          >
+            <div className="friendly-card p-12 max-w-2xl mx-auto">
+              <div className="w-20 h-20 bg-gradient-to-br from-mint-400 to-mint-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <MessageCircle className="w-10 h-10 text-white" />
+              </div>
+              <h2 className="text-3xl font-friendly font-bold text-warm-800 mb-4">Messages</h2>
+              <p className="text-warm-600 mb-4 text-lg">No conversations yet!</p>
+              <p className="text-warm-600 mb-8">Once you match with someone and they accept, you'll be able to chat here.</p>
+              <button
+                onClick={() => setActiveTab('discover')}
+                className="friendly-button px-8 py-4 font-semibold text-lg"
+              >
+                Find Matches
+              </button>
+            </div>
+          </motion.div>
         )}
       </main>
     </div>

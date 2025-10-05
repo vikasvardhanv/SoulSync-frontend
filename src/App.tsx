@@ -17,6 +17,8 @@ import ProductionFeatures from './components/ProductionFeatures';
 import LoginForm from './components/auth/LoginForm';
 import SignupForm from './components/auth/SignupForm';
 import Dashboard from './components/Dashboard';
+import Settings from './components/Settings';
+import ProfileEdit from './components/ProfileEdit';
 import { AppProvider, useApp } from './context/AppContext';
 import { useAuthStore } from './stores/authStore';
 
@@ -129,6 +131,21 @@ function AppContent() {
             <Route path="/production-features" element={
               <ProtectedRoute>
                 <ProductionFeatures />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <ProfileEdit />
+              </ProtectedRoute>
+            } />
+            <Route path="/edit-profile" element={
+              <ProtectedRoute>
+                <ProfileEdit />
               </ProtectedRoute>
             } />
           </Routes>
