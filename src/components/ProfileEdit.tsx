@@ -17,6 +17,7 @@ import { useAuthStore } from '../stores/authStore';
 import { usersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import ImageUpload from './ImageUpload';
+import LocationSelector from './LocationSelector';
 
 const ProfileEdit = () => {
   const navigate = useNavigate();
@@ -28,6 +29,11 @@ const ProfileEdit = () => {
     name: user?.name || '',
     age: user?.age || '',
     location: user?.location || '',
+    city: user?.city || '',
+    state: user?.state || '',
+    country: user?.country || '',
+    latitude: user?.latitude || null,
+    longitude: user?.longitude || null,
     bio: user?.bio || '',
     interests: user?.interests || [],
     gender: user?.gender || '',
@@ -42,6 +48,11 @@ const ProfileEdit = () => {
         name: user.name || '',
         age: user.age || '',
         location: user.location || '',
+        city: user.city || '',
+        state: user.state || '',
+        country: user.country || '',
+        latitude: user.latitude || null,
+        longitude: user.longitude || null,
         bio: user.bio || '',
         interests: user.interests || [],
         gender: user.gender || '',
@@ -79,6 +90,11 @@ const ProfileEdit = () => {
         name: formData.name,
         age: formData.age ? parseInt(formData.age.toString()) : undefined,
         location: formData.location,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         bio: formData.bio,
         interests: formData.interests,
         gender: formData.gender,
@@ -235,12 +251,27 @@ const ProfileEdit = () => {
                   <MapPin className="w-4 h-4" />
                   Location
                 </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/50 border border-warm-200 rounded-xl text-warm-800 placeholder-warm-400 focus:outline-none focus:ring-2 focus:ring-coral-400"
-                  placeholder="City, Country"
+                <LocationSelector
+                  value={{
+                    city: formData.city,
+                    state: formData.state,
+                    country: formData.country,
+                    latitude: formData.latitude || undefined,
+                    longitude: formData.longitude || undefined
+                  }}
+                  onChange={(locationData) => {
+                    setFormData({
+                      ...formData,
+                      city: locationData.city,
+                      state: locationData.state,
+                      country: locationData.country,
+                      latitude: locationData.latitude,
+                      longitude: locationData.longitude,
+                      location: locationData.fullLocation // Keep for backward compatibility
+                    });
+                  }}
+                  placeholder="Search for your city..."
+                  className="w-full"
                 />
               </div>
 

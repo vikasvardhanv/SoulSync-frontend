@@ -362,6 +362,25 @@ export const questionsAPI = {
     api.get(`/questions/category/${category}`),
 };
 
+// Locations API
+export const locationsAPI = {
+  getCities: (params?: {
+    search?: string;
+    limit?: number;
+  }) => api.get('/locations/cities', { params }),
+
+  getCitiesByCountry: (country: string) => 
+    api.get(`/locations/cities/country/${country}`),
+
+  getNearbyCities: (params: {
+    lat: number;
+    lng: number;
+    radius?: number;
+  }) => api.get('/locations/cities/nearby', { params }),
+
+  getLocationStats: () => api.get('/locations/stats'),
+};
+
 // Analytics API (for admin/user insights)
 export const analyticsAPI = {
   getUserStats: () => api.get('/analytics/user-stats'),

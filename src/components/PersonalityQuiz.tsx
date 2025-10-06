@@ -5,11 +5,14 @@ import { Heart, ArrowRight, ArrowLeft, LogOut, User } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getRandomQuestions, Question } from '../data/questionBank';
 import { useAuthStore } from '../stores/authStore';
+import { questionsAPI } from '../services/api';
 
 const PersonalityQuiz = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [answerProgress, setAnswerProgress] = useState<any>(null);
   const navigate = useNavigate();
   const { dispatch } = useApp();
   const { user, signOut } = useAuthStore();
@@ -37,8 +40,31 @@ const PersonalityQuiz = () => {
     setQuestions(uniqueQuestions);
   }, []);
 
-  const handleAnswer = (questionId: string, value: any) => {
+  const handleAnswer = async (questionId: string, value: any) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
+    
+    // Submit answer to backend API
+    try {
+      setIsSubmitting(true);
+      const response = await questionsAPI.submitAnswer(questionId, { answer: value });
+      
+      // Update progress if returned by API
+      if (response.data?.progress) {
+        setAnswerProgress(response.data.progress);
+        console.log('✅ Answer submitted:', response.data.message);
+        
+        // Show milestone celebration if reached
+        if (response.data.progress.milestones?.reachedMilestone) {
+          // Could add a toast notification here
+          console.log('🎉 Milestone reached!', response.data.progress.milestones.milestoneNumber);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to submit answer:', error);
+      // Still allow user to continue even if API fails
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const nextQuestion = () => {
@@ -73,7 +99,7 @@ const PersonalityQuiz = () => {
     );
   }
 
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  const quizProgress = ((currentQuestion + 1) / questions.length) * 100;
   const question = questions[currentQuestion];
   const currentAnswer = answers[question.id];
 
@@ -222,11 +248,23 @@ const PersonalityQuiz = () => {
           <div className="w-full bg-peach-200 rounded-full h-2 mt-4">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
+              animate={{ width: `${quizProgress}%` }}
               className="bg-gradient-to-r from-coral-400 to-peach-400 h-2 rounded-full"
               transition={{ duration: 0.5 }}
             />
           </div>
+          
+          {/* Answer Progress */}
+          {answerProgress && (
+            <div className="mt-2 text-sm text-warm-600">
+              <p>🎯 {answerProgress.totalAnswered} answers saved • {answerProgress.matchingReadiness}% matching readiness</p>
+              {answerProgress.milestones?.reachedMilestone && (
+                <p className="text-coral-500 font-medium">
+                  🎉 Milestone reached: {answerProgress.milestones.milestoneNumber} questions!
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Question Card */}
@@ -266,11 +304,11 @@ const PersonalityQuiz = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={nextQuestion}
-            disabled={currentAnswer === undefined || currentAnswer === null}
+            disabled={currentAnswer === undefined || currentAnswer === null || isSubmitting}
             className="flex items-center gap-2 px-6 py-3 friendly-button font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {currentQuestion === questions.length - 1 ? 'Continue' : 'Next'}
-            <ArrowRight className="w-5 h-5" />
+            {isSubmitting ? 'Saving...' : currentQuestion === questions.length - 1 ? 'Continue' : 'Next'}
+            <ArrowRight className={`w-5 h-5 ${isSubmitting ? 'animate-pulse' : ''}`} />
           </motion.button>
         </div>
       </motion.div>

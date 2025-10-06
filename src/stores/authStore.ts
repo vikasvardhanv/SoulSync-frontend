@@ -9,6 +9,11 @@ interface User {
   age?: number;
   bio?: string;
   location?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
   gender?: string;
   lookingFor?: string;
   interests?: string[];
