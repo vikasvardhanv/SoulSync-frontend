@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, Check, Star, Zap, CreditCard, TestTube, Bitcoin, Coins } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { useApp } from '../context/AppContext';
-import { paymentsAPI } from '../services/api';
+import { paymentsAPI, subscriptionsAPI } from '../services/api';
 import NOWPaymentsButton from './NOWPaymentsButton';
 
 const PaymentModal = () => {
@@ -14,6 +14,9 @@ const PaymentModal = () => {
   const [paymentMethod, setPaymentMethod] = useState<'crypto' | 'paypal' | 'nowpayments' | 'demo'>('crypto');
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'completed' | 'failed'>('pending');
+  const [promoCode, setPromoCode] = useState('');
+  const [isRedeeming, setIsRedeeming] = useState(false);
+  const [promoError, setPromoError] = useState('');
   const navigate = useNavigate();
   const { dispatch } = useApp();
 
@@ -31,21 +34,22 @@ const PaymentModal = () => {
       setPaymentError('');
       
       const response = await paymentsAPI.createPayment({
-        amount: 10.00,
-        currency: 'USD',
-        description: 'SoulSync AI Matchmaking - Limited Launch Offer'
+        price_amount: 10.0,
+        price_currency: 'USD',
+        pay_currency: 'BTC',
+        order_description: 'SoulSync AI Matchmaking - Limited Launch Offer'
       });
 
-      const { payment } = response.data.data;
-      setPaymentId(payment.id);
+      const { payment_id, payment_url } = response.data.data;
+      setPaymentId(payment_id);
 
-      // Open Coinbase Commerce payment page
-      if (payment.hostedUrl) {
-        window.open(payment.hostedUrl, '_blank');
+      // Open NOWPayments invoice page
+      if (payment_url) {
+        window.open(payment_url, '_blank');
       }
 
       // Start polling for payment status
-      pollPaymentStatus(payment.id);
+      pollPaymentStatus(payment_id);
       
     } catch (error) {
       console.error('Crypto payment creation error:', error);
@@ -59,9 +63,9 @@ const PaymentModal = () => {
     const pollInterval = setInterval(async () => {
       try {
         const response = await paymentsAPI.getPaymentStatus(id);
-        const { payment } = response.data.data;
+        const { status } = response.data.data;
         
-        if (payment.status === 'completed') {
+        if (status === 'finished' || status === 'confirmed' || status === 'completed') {
           setPaymentStatus('completed');
           setPaymentSuccess(true);
           dispatch({ type: 'SET_PAYMENT_STATUS', payload: true });
@@ -70,7 +74,7 @@ const PaymentModal = () => {
           setTimeout(() => {
             navigate('/compatibility-quiz');
           }, 2000);
-        } else if (payment.status === 'failed') {
+        } else if (status === 'failed' || status === 'expired' || status === 'cancelled') {
           setPaymentStatus('failed');
           setPaymentError('Payment failed. Please try again.');
           setIsProcessing(false);
@@ -115,13 +119,10 @@ const PaymentModal = () => {
     try {
       const details = await actions.order.capture();
       
-      // Create subscription via backend
-      await paymentsAPI.createPayment({
-        amount: 10.00,
-        currency: 'USD',
-        description: 'SoulSync AI Matchmaking - Limited Launch Offer',
-        provider: 'paypal',
-        providerId: details.id
+      // Activate premium via subscriptions API
+      await subscriptionsAPI.createSubscription({
+        plan: 'premium',
+        paypalSubscriptionId: details.id
       });
       
       console.log('PayPal payment completed:', details);
@@ -164,6 +165,32 @@ const PaymentModal = () => {
         navigate('/compatibility-quiz');
       }, 2000);
     }, 2000);
+  };
+
+  const applyPromo = async () => {
+    try {
+      setIsRedeeming(true);
+      setPromoError('');
+      if (!promoCode.trim()) {
+        setPromoError('Please enter a promo code.');
+        setIsRedeeming(false);
+        return;
+      }
+      const { data } = await paymentsAPI.applyPromo(promoCode.trim());
+      if (data?.success) {
+        setPaymentSuccess(true);
+        dispatch({ type: 'SET_PAYMENT_STATUS', payload: true });
+        setTimeout(() => {
+          navigate('/compatibility-quiz');
+        }, 1500);
+      } else {
+        setPromoError(data?.message || 'Invalid promo code.');
+      }
+    } catch (e: any) {
+      setPromoError(e?.response?.data?.message || 'Invalid promo code.');
+    } finally {
+      setIsRedeeming(false);
+    }
   };
 
   if (paymentSuccess) {
@@ -296,6 +323,30 @@ const PaymentModal = () => {
             transition={{ delay: 0.8 }}
             className="bg-white/90 backdrop-blur-sm border border-mint-200 rounded-2xl p-6 shadow-soft"
           >
+            {/* Promo code redemption */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-warm-800 mb-3">Have a promo code?</h3>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                  placeholder="Enter code (e.g., soulsync101)"
+                  className="flex-1 px-3 py-2 border border-warm-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-300 bg-white/80"
+                />
+                <button
+                  onClick={applyPromo}
+                  disabled={isRedeeming}
+                  className="px-4 py-2 rounded-lg bg-mint-500 text-white font-semibold hover:bg-mint-600 disabled:opacity-50"
+                >
+                  {isRedeeming ? 'Applying...' : 'Apply'}
+                </button>
+              </div>
+              {promoError && (
+                <p className="text-sm text-coral-600 mt-2">{promoError}</p>
+              )}
+            </div>
+
             {/* Payment Method Selection */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-warm-800 mb-3 flex items-center gap-2">

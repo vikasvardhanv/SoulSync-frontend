@@ -331,6 +331,9 @@ export const paymentsAPI = {
     currency: string;
     description: string;
   }) => api.post('/payments/nowpayments/create', data),
+
+  // Apply promo code to unlock premium
+  applyPromo: (code: string) => api.post('/payments/promo', { code }),
 };
 
 // Subscriptions API
