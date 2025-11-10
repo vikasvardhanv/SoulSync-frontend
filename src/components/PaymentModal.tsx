@@ -1,77 +1,14 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { Lock, Check, Star, Zap, CreditCard, TestTube, Bitcoin, Coins } from 'lucide-react';
-import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
-import { useApp } from '../context/AppContext';
-import { paymentsAPI, subscriptionsAPI } from '../services/api';
-import NOWPaymentsButton from './NOWPaymentsButton';
-
-const PaymentModal = () => {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentError, setPaymentError] = useState('');
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'crypto' | 'paypal' | 'nowpayments' | 'demo'>('crypto');
-  const [paymentId, setPaymentId] = useState<string | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'completed' | 'failed'>('pending');
-  const [promoCode, setPromoCode] = useState('');
-  const [isRedeeming, setIsRedeeming] = useState(false);
-  const [promoError, setPromoError] = useState('');
-  const navigate = useNavigate();
-  const { dispatch } = useApp();
-
-  // PayPal configuration
-  const paypalOptions = {
-    clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || "AZDxjDScFpQtjWTOUtWKbyN_bDt4OgqaF4eYXlewfBP4-8aqX3PiV8e1GWU6liB2CUXlkA59kJXE7M6R",
-    currency: "USD",
-    intent: "capture"
-  };
-
-  // Create crypto payment
-  const createCryptoPayment = async () => {
-    try {
-      setIsProcessing(true);
-      setPaymentError('');
-      
-      const response = await paymentsAPI.createPayment({
-        price_amount: 10.0,
-        price_currency: 'USD',
-        pay_currency: 'BTC',
-        order_description: 'SoulSync AI Matchmaking - Limited Launch Offer'
-      });
-
-      const { payment_id, payment_url } = response.data.data;
-      setPaymentId(payment_id);
-
-      // Open NOWPayments invoice page
-      if (payment_url) {
-        window.open(payment_url, '_blank');
-      }
-
-      // Start polling for payment status
-      pollPaymentStatus(payment_id);
-      
-    } catch (error) {
-      console.error('Crypto payment creation error:', error);
-      setPaymentError('Failed to create payment. Please try again.');
-      setIsProcessing(false);
-    }
-  };
-
-  // Poll payment status
-  const pollPaymentStatus = async (id: string) => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const response = await paymentsAPI.getPaymentStatus(id);
-        const { status } = response.data.data;
-        
-        if (status === 'finished' || status === 'confirmed' || status === 'completed') {
-          setPaymentStatus('completed');
-          setPaymentSuccess(true);
-          dispatch({ type: 'SET_PAYMENT_STATUS', payload: true });
-          clearInterval(pollInterval);
-          
-          setTimeout(() => {
+export {};
+/*
+                whileTap={{ scale: 0.98 }}
+                onClick={createCryptoPayment}
+                disabled={isProcessing}
+                className="w-full bg-gradient-to-r from-coral-400 to-peach-400 text-white py-3 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-coral transition-all flex items-center justify-center gap-2"
+              >
+                <Coins className="w-5 h-5" />
+                {isProcessing ? 'Creating Payment...' : 'Pay $10 with Crypto'}
+              </motion.button>
+            </div>
             navigate('/compatibility-quiz');
           }, 2000);
         } else if (status === 'failed' || status === 'expired' || status === 'cancelled') {
@@ -571,4 +508,4 @@ const PaymentModal = () => {
   );
 };
 
-export default PaymentModal;
+export default PaymentModal; */

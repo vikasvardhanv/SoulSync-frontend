@@ -4,8 +4,8 @@ import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 import WelcomePage from './components/WelcomePage';
 import PersonalityQuiz from './components/PersonalityQuiz';
-// Dynamic import for PaymentModal to prevent early loading of PayPal SDK
-const PaymentModal = React.lazy(() => import('./components/PaymentModal'));
+// Dynamic import for PaymentModal (clean version)
+const PaymentModal = React.lazy(() => import('./components/PaymentModalClean'));
 import CompatibilityQuiz from './components/CompatibilityQuiz';
 import AIMatching from './components/AIMatching';
 import MatchReveal from './components/MatchReveal';
