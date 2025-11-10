@@ -85,31 +85,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      console.log('🚀 Starting signup process with:', {
-        ...credentials,
-        password: '[REDACTED]',
-        photos: credentials.photos ? `${credentials.photos.length} photos` : 'no photos'
-      });
-
       const response = await authAPI.register(credentials);
-      
-      console.log('📥 Signup API response:', {
-        success: response.data.success,
-        hasTokens: !!response.data.data?.tokens,
-        hasUser: !!response.data.data?.user,
-        message: response.data.message
-      });
       
       if (response.data.success) {
         // Store tokens if provided (some registrations may require email verification first)
         const tokens = response.data.data?.tokens;
         if (tokens?.accessToken) {
           localStorage.setItem('accessToken', tokens.accessToken);
-          console.log('✅ Access token stored');
         }
         if (tokens?.refreshToken) {
           localStorage.setItem('refreshToken', tokens.refreshToken);
-          console.log('✅ Refresh token stored');
         }
         
         const userData = response.data.data.user;
@@ -121,22 +106,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isAuthenticated,
           error: null 
         });
-        
-        console.log('✅ Signup successful:', {
-          userId: userData?.id,
-          isAuthenticated,
-          isVerified: userData?.isVerified
-        });
-        
-        // Success message
-        if (!userData?.isVerified) {
-          console.log('📧 Email verification required');
-        }
       } else {
         throw new Error(response.data.message || 'Signup failed');
       }
     } catch (error: any) {
-      console.error('❌ Signup error:', error);
       
       const errorMessage = error.response?.data?.message || 
                           error.message || 
@@ -167,16 +140,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      console.log('🚀 Starting signin process for:', credentials.email);
-
       const response = await authAPI.login(credentials);
-      
-      console.log('📥 Signin API response:', {
-        success: response.data.success,
-        hasTokens: !!response.data.data?.tokens,
-        hasUser: !!response.data.data?.user,
-        message: response.data.message
-      });
       
       if (response.data.success) {
         // Store tokens
@@ -184,9 +148,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (tokens?.accessToken && tokens?.refreshToken) {
           localStorage.setItem('accessToken', tokens.accessToken);
           localStorage.setItem('refreshToken', tokens.refreshToken);
-          console.log('✅ Auth tokens stored');
-        } else {
-          console.warn('⚠️ Incomplete token data received');
         }
         
         const userData = response.data.data.user;
@@ -196,16 +157,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isAuthenticated: true,
           error: null
         });
-        
-        console.log('✅ Signin successful:', {
-          userId: userData?.id,
-          isVerified: userData?.isVerified
-        });
       } else {
         throw new Error(response.data.message || 'Login failed');
       }
     } catch (error: any) {
-      console.error('❌ Signin error:', error);
       
       const errorMessage = error.response?.data?.message || 
                           error.message || 
@@ -259,7 +214,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const token = localStorage.getItem('accessToken');
     
     if (!token) {
-      console.log('🔍 No access token found, user not authenticated');
       set({ 
         user: null, 
         loading: false,
@@ -271,14 +225,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      console.log('🔍 Checking authentication status...');
       const response = await authAPI.getMe();
-      
-      console.log('📥 Auth check response:', {
-        success: response.data.success,
-        hasUser: !!response.data.data?.user,
-        message: response.data.message
-      });
       
       if (response.data.success) {
         const userData = response.data.data.user;
@@ -289,26 +236,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isAuthenticated: true,
           error: null
         });
-        
-        console.log('✅ Auth check successful:', {
-          userId: userData?.id,
-          isVerified: userData?.isVerified
-        });
       } else {
         throw new Error('Invalid response from server');
       }
     } catch (error: any) {
-      console.error('❌ Auth check error:', error);
-      
       // If it's a 401 error, try to refresh the token
       if (error.response?.status === 401) {
-        console.log('🔄 Access token expired, attempting refresh...');
-        
         try {
           const refreshSuccess = await get().refreshToken();
           
           if (refreshSuccess) {
-            console.log('✅ Token refresh successful, retrying auth check...');
             // Retry auth check after successful refresh
             try {
               const retryResponse = await authAPI.getMe();
@@ -320,15 +257,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                   isAuthenticated: true,
                   error: null
                 });
-                console.log('✅ Retry auth check successful');
                 return;
               }
             } catch (retryError) {
-              console.error('❌ Retry auth check failed:', retryError);
+              // Silent fail on retry
             }
           }
         } catch (refreshError) {
-          console.error('❌ Token refresh failed:', refreshError);
+          // Silent fail on refresh
         }
       }
       
@@ -340,10 +276,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         user: null, 
         loading: false,
         isAuthenticated: false,
-        error: null // Don't show error for auth check failures
+        error: null
       });
-      
-      console.log('🚪 Authentication cleared due to error');
     }
   },
 

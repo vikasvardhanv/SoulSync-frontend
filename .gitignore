@@ -151,3 +151,9 @@ deploy.sh
 
 # Vercel (legacy)
 .vercel
+
+cloudbuild.yaml
+RENDER-DEPLOYMENT.md
+test-api.js
+deploy-gcp.sh
+Dockerfile.gcp

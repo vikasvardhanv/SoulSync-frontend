@@ -15,7 +15,10 @@ const getApiUrl = () => {
 
 const API_BASE_URL = getApiUrl();
 
-console.log('🌐 API Base URL:', API_BASE_URL);
+// Only log in development
+if (import.meta.env.DEV) {
+  console.log('🌐 API Base URL:', API_BASE_URL);
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -55,7 +58,7 @@ api.interceptors.request.use(
 // Enhanced response interceptor with better error handling
 api.interceptors.response.use(
   (response) => {
-    // Log successful responses in development
+    // Log successful responses only in development
     if (import.meta.env.DEV) {
       console.log('📥 API Response:', {
         method: response.config.method?.toUpperCase(),
@@ -73,13 +76,16 @@ api.interceptors.response.use(
     const errorType = error.response?.data?.error?.type;
     const suggestion = error.response?.data?.error?.suggestion || '';
 
-    console.error('❌ API Error:', { 
-      status, 
-      message, 
-      errorType, 
-      url: original?.url,
-      method: original?.method?.toUpperCase()
-    });
+    // Log errors only in development
+    if (import.meta.env.DEV) {
+      console.error('❌ API Error:', { 
+        status, 
+        message, 
+        errorType, 
+        url: original?.url,
+        method: original?.method?.toUpperCase()
+      });
+    }
 
     // Handle timeout errors
     if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
@@ -121,17 +127,19 @@ api.interceptors.response.use(
                               original?.url?.includes('/users/potential-matches');
         
         if (isAuthFlow || isOptionalAuth) {
-          // For signup flow and optional auth endpoints, just log the error
-          console.warn('⚠️ Auth error during signup/optional endpoint:', { 
-            url: original?.url, 
-            message 
-          });
+          // For signup flow and optional auth endpoints, just log the error in dev
+          if (import.meta.env.DEV) {
+            console.warn('⚠️ Auth error during signup/optional endpoint:', { 
+              url: original?.url, 
+              message 
+            });
+          }
         } else {
           // Normal 401 handling for authenticated routes
           toast.error('Session expired. Please log in again.', { duration: 5000 });
           
-          if (!original?._retry) {
-            original._retry = true;
+          if (original && !(original as any)._retry) {
+            (original as any)._retry = true;
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
             
