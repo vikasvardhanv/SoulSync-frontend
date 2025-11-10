@@ -22,14 +22,13 @@ interface LocationSelectorProps {
   className?: string;
 }
 
-interface City {
-  name: string;
-  state: string;
-  country: string;
-  continent: string;
-  lat: number;
-  lng: number;
-  fullLocation: string;
+interface Suggestion {
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  latitude: number;
+  longitude: number;
+  formattedAddress: string;
 }
 
 const LocationSelector: React.FC<LocationSelectorProps> = ({
@@ -40,7 +39,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [cities, setCities] = useState<City[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<string>(
     value ? `${value.city}, ${value.state}, ${value.country}` : ''
@@ -61,10 +60,10 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Search for cities
+  // Autocomplete suggestions from backend
   useEffect(() => {
     if (searchTerm.length < 2) {
-      setCities([]);
+      setSuggestions([]);
       return;
     }
 
@@ -76,11 +75,20 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
     searchTimeout.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/locations/cities?search=${encodeURIComponent(searchTerm)}&limit=10`);
+        const response = await fetch(`/api/locations/autocomplete?query=${encodeURIComponent(searchTerm)}`);
         const data = await response.json();
-        
-        if (data.success) {
-          setCities(data.data.cities);
+        if (data.success && Array.isArray(data.candidates)) {
+          const mapped: Suggestion[] = data.candidates.map((c: any) => ({
+            city: c.city || null,
+            state: c.state || null,
+            country: c.country || null,
+            latitude: c.latitude,
+            longitude: c.longitude,
+            formattedAddress: c.formattedAddress
+          }));
+          setSuggestions(mapped);
+        } else {
+          setSuggestions([]);
         }
       } catch (error) {
         console.error('Failed to search cities:', error);
@@ -96,20 +104,59 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
     };
   }, [searchTerm]);
 
-  const handleCitySelect = (city: City) => {
+  const handleSuggestionSelect = (s: Suggestion) => {
+    const resolvedCity = s.city || '';
+    const resolvedState = s.state || '';
+    const resolvedCountry = s.country || '';
     const locationData = {
-      city: city.name,
-      state: city.state,
-      country: city.country,
-      latitude: city.lat,
-      longitude: city.lng,
-      fullLocation: city.fullLocation
+      city: resolvedCity,
+      state: resolvedState,
+      country: resolvedCountry,
+      latitude: s.latitude,
+      longitude: s.longitude,
+      fullLocation: s.formattedAddress
     };
 
-    setSelectedLocation(city.fullLocation);
+    setSelectedLocation(s.formattedAddress);
     setSearchTerm('');
     setIsOpen(false);
     onChange(locationData);
+  };
+
+  const useMyLocation = async () => {
+    try {
+      setLoading(true);
+      await new Promise<void>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+          try {
+            const { latitude, longitude } = pos.coords;
+            const resp = await fetch(`/api/locations/reverse?lat=${latitude}&lng=${longitude}`);
+            const data = await resp.json();
+            if (data.success && data.best) {
+              const best = data.best;
+              const s: Suggestion = {
+                city: best.city || null,
+                state: best.state || null,
+                country: best.country || null,
+                latitude: best.latitude,
+                longitude: best.longitude,
+                formattedAddress: best.formattedAddress
+              };
+              handleSuggestionSelect(s);
+              resolve();
+            } else {
+              reject(new Error('Failed to resolve current location'));
+            }
+          } catch (e) {
+            reject(e);
+          }
+        }, reject, { enableHighAccuracy: true, timeout: 10000 });
+      });
+    } catch (e) {
+      console.error('Geolocation error:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,29 +236,36 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
                   <span className="text-warm-600">Searching cities...</span>
                 </div>
               </div>
-            ) : cities.length > 0 ? (
-              <div className="py-2">
-                {cities.map((city, index) => (
+            ) : suggestions.length > 0 ? (
+              <div>
+                <div className="px-3 pt-3">
+                  <button onClick={useMyLocation} className="w-full text-left px-3 py-2 mb-2 text-sm rounded-lg bg-peach-50 hover:bg-peach-100 text-coral-600">
+                    Use my current location
+                  </button>
+                </div>
+                <div className="py-2">
+                {suggestions.map((s, index) => (
                   <motion.button
-                    key={`${city.name}-${city.state}-${city.country}`}
+                    key={`${s.formattedAddress}-${index}`}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    onClick={() => handleCitySelect(city)}
+                    onClick={() => handleSuggestionSelect(s)}
                     className="w-full px-4 py-3 text-left hover:bg-peach-50 transition-colors flex items-center justify-between group"
                   >
                     <div>
                       <div className="flex items-center">
-                        <span className="text-warm-800 font-medium">{city.name}</span>
-                        <span className="text-warm-500 ml-2">{getFlagEmoji(city.country)}</span>
+                        <span className="text-warm-800 font-medium">{s.city || s.formattedAddress}</span>
+                        <span className="text-warm-500 ml-2">{getFlagEmoji(s.country || '')}</span>
                       </div>
                       <div className="text-sm text-warm-500 mt-1">
-                        {city.state}, {city.country}
+                        {s.state || ''}{s.state && s.country ? ', ' : ''}{s.country || ''}
                       </div>
                     </div>
                     <MapPin className="w-4 h-4 text-coral-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </motion.button>
                 ))}
+                </div>
               </div>
             ) : searchTerm.length >= 2 ? (
               <div className="p-4 text-center text-warm-500">
