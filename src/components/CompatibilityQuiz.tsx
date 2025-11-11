@@ -25,15 +25,22 @@ const CompatibilityQuiz = () => {
     const communicationQuestions = getRandomQuestions('communication', 2, personalityAnswerIds);
     const relationshipQuestions = getRandomQuestions('relationship', 2, personalityAnswerIds);
     const compatibilityQuestions = getRandomQuestions('compatibility', 1, personalityAnswerIds);
-    
-    const selectedQuestions = [
+
+    // Deduplicate by question id in case categories overlap with high-weight picks
+    const combined = [
       ...highWeightQuestions,
       ...communicationQuestions,
       ...relationshipQuestions,
       ...compatibilityQuestions
-    ].slice(0, 8); // Limit to 8 questions for better UX
-    
-    setQuestions(selectedQuestions);
+    ];
+
+    const uniqueByIdMap = new Map<string, Question>();
+    combined.forEach(q => {
+      if (!uniqueByIdMap.has(q.id)) uniqueByIdMap.set(q.id, q);
+    });
+
+    const unique = Array.from(uniqueByIdMap.values()).slice(0, 8); // Limit to 8
+    setQuestions(unique);
   }, [state.personalityAnswers]);
 
   const handleAnswer = (questionId: string, value: any) => {

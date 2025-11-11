@@ -44,6 +44,8 @@ interface AuthState {
     password: string;
     name: string;
     age: number;
+    gender: string;
+    lookingFor: string;
     bio?: string;
     location?: string;
     interests?: string[];

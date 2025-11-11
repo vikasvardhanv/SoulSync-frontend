@@ -14,6 +14,9 @@ const PaymentModalClean = () => {
   const [promoCode, setPromoCode] = useState('');
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [promoError, setPromoError] = useState('');
+  const [promoApplied, setPromoApplied] = useState(false);
+  const BASE_PRICE = 10.0;
+  const price = promoApplied ? 0 : BASE_PRICE;
   const navigate = useNavigate();
   const { dispatch } = useApp();
 
@@ -31,8 +34,17 @@ const PaymentModalClean = () => {
     try {
       setIsProcessing(true);
       setPaymentError('');
+      // If promo is applied (price is $0), skip external provider and grant access immediately
+      if (price <= 0) {
+        setPaymentSuccess(true);
+        dispatch({ type: 'SET_PAYMENT_STATUS', payload: true });
+        setIsProcessing(false);
+        setTimeout(() => navigate('/compatibility-quiz'), 800);
+        return;
+      }
+
       const response = await paymentsAPI.createPayment({
-        price_amount: 10.0,
+        price_amount: price,
         price_currency: 'USD',
         pay_currency: 'BTC',
         order_description: 'SoulSync AI Matchmaking - Limited Launch Offer',
@@ -92,9 +104,9 @@ const PaymentModalClean = () => {
       }
       const { data } = await paymentsAPI.applyPromo(promoCode.trim());
       if (data?.success) {
-        setPaymentSuccess(true);
-        dispatch({ type: 'SET_PAYMENT_STATUS', payload: true });
-        setTimeout(() => navigate('/compatibility-quiz'), 1000);
+        // Mark promo as applied; price becomes $0 and user can proceed without external payment
+        setPromoApplied(true);
+        setPaymentError('');
       } else {
         setPromoError(data?.message || 'Invalid promo code.');
       }
@@ -142,8 +154,17 @@ const PaymentModalClean = () => {
           <div className="bg-white/90 backdrop-blur-sm border border-coral-200 rounded-xl p-4 mb-6 shadow-soft">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Star className="w-5 h-5 text-coral-500" fill="currentColor" />
-              <span className="text-2xl font-bold text-warm-800">$10</span>
-              <span className="text-warm-400 line-through">$29</span>
+              {promoApplied ? (
+                <>
+                  <span className="text-2xl font-bold text-mint-700">$0</span>
+                  <span className="text-warm-400 line-through">${BASE_PRICE}</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl font-bold text-warm-800">${BASE_PRICE}</span>
+                  <span className="text-warm-400 line-through">$29</span>
+                </>
+              )}
             </div>
             <p className="text-sm text-warm-600">We're invite-only. Your payment ensures real users & accurate matching.</p>
           </div>
@@ -166,7 +187,7 @@ const PaymentModalClean = () => {
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-warm-800 mb-3">Have a promo code?</h3>
             <div className="flex gap-2">
-              <input type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} placeholder="Enter code (e.g., soulsync101)" className="flex-1 px-3 py-2 border border-warm-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-300 bg-white/80" />
+              <input type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} className="flex-1 px-3 py-2 border border-warm-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-300 bg-white/80" />
               <button onClick={applyPromo} disabled={isRedeeming} className="px-4 py-2 rounded-lg bg-mint-500 text-white font-semibold hover:bg-mint-600 disabled:opacity-50">
                 {isRedeeming ? 'Applying...' : 'Apply'}
               </button>
@@ -176,13 +197,20 @@ const PaymentModalClean = () => {
           <div className="mb-6 border-t border-warm-100 pt-6">
             <h3 className="text-lg font-semibold text-warm-800 mb-3 flex items-center gap-2">
               <Coins className="w-5 h-5 text-coral-500" />
-              Pay with Crypto (NOWPayments)
+              Pay with Crypto
             </h3>
             <p className="text-sm text-warm-600 mb-4">Secure payment via NOWPayments. Opens an invoice in a new tab.</p>
             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={createNowPayment} disabled={isProcessing} className="w-full bg-gradient-to-r from-coral-400 to-peach-400 text-white py-3 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-coral transition-all flex items-center justify-center gap-2">
               <Coins className="w-5 h-5" />
-              {isProcessing ? 'Creating Payment...' : 'Pay $10 with Crypto'}
+              {isProcessing
+                ? 'Processing...'
+                : promoApplied
+                ? 'Activate for $0'
+                : `Pay $${BASE_PRICE} with Crypto`}
             </motion.button>
+            {promoApplied && (
+              <p className="text-xs text-mint-700 mt-2 text-center">Promo applied! Total due: $0</p>
+            )}
           </div>
           {paymentError && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-coral-100 border border-coral-300 rounded-lg p-3 mb-4">

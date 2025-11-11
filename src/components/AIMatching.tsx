@@ -57,7 +57,7 @@ const AIMatching = () => {
       const { matches } = response.data.data;
       
       if (matches.length === 0) {
-        setError('No potential matches found right now. Don\'t worry! We\'ll notify you when we find compatible matches based on your personality score.');
+        setError("No potential matches found right now. Don't worry! We'll notify you when we find compatible matches based on your personality score.");
         return null;
       }
 
@@ -201,6 +201,10 @@ const AIMatching = () => {
   const handleRetry = () => {
     navigate('/dashboard');
   };
+  const handleImprove = () => {
+    // Encourage answering more questions to improve match pool
+    navigate('/personality-quiz');
+  };
 
   // Show error state
   if (error) {
@@ -245,14 +249,34 @@ const AIMatching = () => {
             {error}
           </p>
 
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleRetry}
-            className="friendly-button font-semibold px-8 py-3"
-          >
-            Back to Dashboard
-          </motion.button>
+          <div className="bg-white/80 border border-peach-200 rounded-xl p-4 text-left mb-6">
+            <p className="text-warm-700 font-medium mb-2">Try these to boost your chances:</p>
+            <ul className="list-disc list-inside text-warm-600 text-sm space-y-1">
+              <li>Increase your personality score by answering a few more questions.</li>
+              <li>Update your profile with interests and a short bio.</li>
+              <li>Check back later as new users join throughout the day.</li>
+            </ul>
+          </div>
+
+          <div className="flex items-center justify-center gap-3">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleImprove}
+              className="friendly-button font-semibold px-6 py-3"
+            >
+              Answer more questions
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleRetry}
+              className="px-6 py-3 bg-white/80 text-warm-700 rounded-xl font-semibold hover:bg-white transition-all"
+            >
+              Back to Dashboard
+            </motion.button>
+          </div>
         </motion.div>
       </div>
     );

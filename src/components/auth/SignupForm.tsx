@@ -16,6 +16,8 @@ interface SignupFormData {
   bio?: string;
   location?: string;
   interests?: string;
+  gender: string;
+  lookingFor: string;
 }
 
 interface FormErrors {
@@ -36,7 +38,9 @@ const SignupForm = () => {
     age: '',
     bio: '',
     location: '',
-    interests: ''
+    interests: '',
+    gender: '',
+    lookingFor: ''
   });
   const [photos, setPhotos] = useState<string[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -76,6 +80,14 @@ const SignupForm = () => {
         if (ageNum < 18) return 'You must be at least 18 years old';
         if (ageNum > 100) return 'Please enter a valid age';
         return '';
+      case 'gender':
+        if (!value) return 'Please select your gender';
+        if (!['male','female','non-binary','other','prefer-not-to-say'].includes(value)) return 'Invalid gender selection';
+        return '';
+      case 'lookingFor':
+        if (!value) return 'Please select who you are looking for';
+        if (!['male','female','non-binary','everyone'].includes(value)) return 'Invalid selection';
+        return '';
       
       default:
         return '';
@@ -108,6 +120,10 @@ const SignupForm = () => {
     newErrors.password = validateField('password', formData.password);
     newErrors.confirmPassword = validateField('confirmPassword', formData.confirmPassword);
     newErrors.age = validateField('age', formData.age);
+  const genderErr = validateField('gender', formData.gender);
+  const lookingForErr = validateField('lookingFor', formData.lookingFor);
+  if (genderErr) newErrors.general = genderErr;
+  if (lookingForErr) newErrors.general = lookingForErr;
 
     // Validate photos - minimum 2 required
     if (photos.length < 2) {
@@ -130,7 +146,9 @@ const SignupForm = () => {
       name: formData.name.trim(),
       email: formData.email.trim().toLowerCase(),
       password: formData.password,
-      age: parseInt(formData.age)
+      age: parseInt(formData.age),
+      gender: formData.gender,
+      lookingFor: formData.lookingFor
     };
 
     // Add optional fields if provided
@@ -399,6 +417,55 @@ const SignupForm = () => {
                 )}
               </div>
 
+              {/* Gender Field */}
+              <div className="space-y-1">
+                <label htmlFor="gender" className="block text-sm font-medium text-warm-700">
+                  Gender <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    id="gender"
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleInputChange as any}
+                    onBlur={handleBlur as any}
+                    required
+                    className={`friendly-input w-full pr-10 py-3 ${!formData.gender ? 'border-red-300 focus:border-red-500' : ''}`}
+                  >
+                    <option value="" disabled>Select your gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="non-binary">Non-binary</option>
+                    <option value="other">Other</option>
+                    <option value="prefer-not-to-say">Prefer not to say</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Looking For Field */}
+              <div className="space-y-1">
+                <label htmlFor="lookingFor" className="block text-sm font-medium text-warm-700">
+                  Looking For <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    id="lookingFor"
+                    name="lookingFor"
+                    value={formData.lookingFor}
+                    onChange={handleInputChange as any}
+                    onBlur={handleBlur as any}
+                    required
+                    className={`friendly-input w-full pr-10 py-3 ${!formData.lookingFor ? 'border-red-300 focus:border-red-500' : ''}`}
+                  >
+                    <option value="" disabled>Select who you want to match with</option>
+                    <option value="female">Women</option>
+                    <option value="male">Men</option>
+                    <option value="non-binary">Non-binary</option>
+                    <option value="everyone">Everyone</option>
+                  </select>
+                </div>
+              </div>
+
               {/* Password Field */}
               <div className="space-y-1">
                 <label htmlFor="password" className="block text-sm font-medium text-warm-700">
@@ -589,6 +656,8 @@ const SignupForm = () => {
                     {formData.password !== formData.confirmPassword && <p>• Passwords must match</p>}
                     {parseInt(formData.age) < 18 && <p>• Enter your age (18+)</p>}
                     {photos.length < 2 && <p>• Upload at least 2 photos ({photos.length}/2)</p>}
+                    {!formData.gender && <p>• Select your gender</p>}
+                    {!formData.lookingFor && <p>• Select who you are looking for</p>}
                   </div>
                 </div>
               )}
