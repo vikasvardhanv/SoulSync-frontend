@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, Check, Star, Zap, Coins } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { paymentsAPI } from '../services/api';
+import { useAuthStore } from '../stores/authStore';
 
 const PaymentModalClean = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -19,9 +20,20 @@ const PaymentModalClean = () => {
   const price = promoApplied ? 0 : BASE_PRICE;
   const navigate = useNavigate();
   const { dispatch } = useApp();
+  const { user } = useAuthStore();
 
   const pollIntervalRef = useRef<number | null>(null);
   const pollTimeoutRef = useRef<number | null>(null);
+
+  // Check if user already has premium access on mount
+  useEffect(() => {
+    if (user?.hasPremium) {
+      console.log('✅ User has premium access, redirecting to quiz');
+      // User already has premium, skip payment modal and go to quiz
+      dispatch({ type: 'SET_PAYMENT_STATUS', payload: true });
+      navigate('/compatibility-quiz', { replace: true });
+    }
+  }, [user, navigate, dispatch]);
 
   useEffect(() => {
     return () => {

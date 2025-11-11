@@ -22,14 +22,12 @@ interface User {
   isActive?: boolean;
   personalityScore?: number;
   questionsAnswered?: number;
-}
-
-interface Subscription {
-  id: string;
-  plan: string;
-  status: string;
-  expiresAt: string;
-  createdAt: string;
+  hasPremium?: boolean;
+  subscription?: {
+    plan: string;
+    status: string;
+    expiresAt: string;
+  } | null;
 }
 
 interface AuthState {
