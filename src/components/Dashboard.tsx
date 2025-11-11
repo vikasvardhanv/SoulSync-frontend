@@ -110,7 +110,7 @@ const Dashboard = () => {
             <div className="flex items-center space-x-4">
               <MatchNotifications />
               
-              <div className="relative group">
+              <div className="relative group z-50">
                 <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/20 transition-all">
                   <div className="w-8 h-8 bg-gradient-to-r from-coral-400 to-peach-400 rounded-full flex items-center justify-center shadow-coral">
                     <User className="w-4 h-4 text-white" />
@@ -119,7 +119,7 @@ const Dashboard = () => {
                 </button>
                 
                 {/* Dropdown Menu */}
-                <div className="absolute right-0 mt-2 w-48 friendly-card border border-white/30 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                <div className="absolute right-0 mt-2 w-48 friendly-card border border-white/30 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[100]">
                   <div className="py-2">
                     <button
                       onClick={() => navigate('/profile')}

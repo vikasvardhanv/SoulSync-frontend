@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, Heart, ArrowLeft, MapPin, Tag, Calendar } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Heart, ArrowLeft, Tag, Calendar } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import ImageUpload from '../ImageUpload';
+import LocationSelector from '../LocationSelector';
 import toast from 'react-hot-toast';
 
 interface SignupFormData {
@@ -15,9 +16,16 @@ interface SignupFormData {
   age: string;
   bio?: string;
   location?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
   interests?: string;
   gender: string;
   lookingFor: string;
+  minAge?: string;
+  maxAge?: string;
 }
 
 interface FormErrors {
@@ -38,9 +46,16 @@ const SignupForm = () => {
     age: '',
     bio: '',
     location: '',
+    city: '',
+    state: '',
+    country: '',
+    latitude: undefined,
+    longitude: undefined,
     interests: '',
     gender: '',
-    lookingFor: ''
+    lookingFor: '',
+    minAge: '18',
+    maxAge: '100'
   });
   const [photos, setPhotos] = useState<string[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -87,6 +102,12 @@ const SignupForm = () => {
       case 'lookingFor':
         if (!value) return 'Please select who you are looking for';
         if (!['male','female','non-binary','everyone'].includes(value)) return 'Invalid selection';
+        return '';
+      
+      case 'minAge':
+      case 'maxAge':
+        const ageVal = parseInt(value);
+        if (isNaN(ageVal) || ageVal < 18 || ageVal > 100) return 'Age must be between 18 and 100';
         return '';
       
       default:
@@ -151,13 +172,28 @@ const SignupForm = () => {
       lookingFor: formData.lookingFor
     };
 
+    // Add location data if provided
+    if (formData.city && formData.state && formData.country) {
+      payload.city = formData.city;
+      payload.state = formData.state;
+      payload.country = formData.country;
+      payload.location = `${formData.city}, ${formData.state}, ${formData.country}`;
+    } else if (formData.location?.trim()) {
+      payload.location = formData.location.trim();
+    }
+
+    if (formData.latitude !== undefined && formData.longitude !== undefined) {
+      payload.latitude = formData.latitude;
+      payload.longitude = formData.longitude;
+    }
+
+    // Age range preferences
+    if (formData.minAge) payload.minAge = parseInt(formData.minAge);
+    if (formData.maxAge) payload.maxAge = parseInt(formData.maxAge);
+
     // Add optional fields if provided
     if (formData.bio?.trim()) {
       payload.bio = formData.bio.trim();
-    }
-    
-    if (formData.location?.trim()) {
-      payload.location = formData.location.trim();
     }
     
     if (formData.interests?.trim()) {
@@ -466,6 +502,48 @@ const SignupForm = () => {
                 </div>
               </div>
 
+              {/* Age Range Preference */}
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-warm-700">
+                  Age Range Preference
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="minAge" className="block text-xs text-warm-600 mb-1">
+                      Min Age
+                    </label>
+                    <input
+                      id="minAge"
+                      name="minAge"
+                      type="number"
+                      min={18}
+                      max={100}
+                      value={formData.minAge}
+                      onChange={handleInputChange}
+                      className="friendly-input w-full py-2 px-3"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="maxAge" className="block text-xs text-warm-600 mb-1">
+                      Max Age
+                    </label>
+                    <input
+                      id="maxAge"
+                      name="maxAge"
+                      type="number"
+                      min={18}
+                      max={100}
+                      value={formData.maxAge}
+                      onChange={handleInputChange}
+                      className="friendly-input w-full py-2 px-3"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-warm-500 mt-1">
+                  We'll show you matches within this age range
+                </p>
+              </div>
+
               {/* Password Field */}
               <div className="space-y-1">
                 <label htmlFor="password" className="block text-sm font-medium text-warm-700">
@@ -586,24 +664,36 @@ const SignupForm = () => {
                 <p className="text-xs text-warm-500">{formData.bio?.length || 0}/500 characters</p>
               </div>
 
-              {/* Location Field */}
+              {/* Location Field - Now with autocomplete */}
               <div className="space-y-1 mb-4">
                 <label htmlFor="location" className="block text-sm font-medium text-warm-700">
                   Where are you based?
                 </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-warm-400 pointer-events-none z-10" />
-                  <input
-                    id="location"
-                    name="location"
-                    type="text"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className="friendly-input w-full pl-10 pr-4 py-3"
-                    maxLength={100}
-                    placeholder="e.g., San Francisco, CA"
-                  />
-                </div>
+                <LocationSelector
+                  value={{
+                    city: formData.city,
+                    state: formData.state,
+                    country: formData.country,
+                    latitude: formData.latitude,
+                    longitude: formData.longitude
+                  }}
+                  onChange={(locationData) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      city: locationData.city,
+                      state: locationData.state,
+                      country: locationData.country,
+                      latitude: locationData.latitude,
+                      longitude: locationData.longitude,
+                      location: locationData.fullLocation
+                    }));
+                  }}
+                  placeholder="Search for your city..."
+                  className="w-full"
+                />
+                <p className="text-xs text-warm-500">
+                  We'll use this to find matches near you
+                </p>
               </div>
 
               {/* Interests Field */}

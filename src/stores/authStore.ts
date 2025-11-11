@@ -46,8 +46,15 @@ interface AuthState {
     age: number;
     gender: string;
     lookingFor: string;
+    minAge?: number;
+    maxAge?: number;
     bio?: string;
     location?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
     interests?: string[];
     photos?: string[];
   }) => Promise<void>;
