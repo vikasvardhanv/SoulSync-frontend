@@ -49,14 +49,23 @@ const PersonalityQuiz = () => {
       const response = await questionsAPI.submitAnswer(questionId, { answer: value });
       
       // Update progress if returned by API
-      if (response.data?.progress) {
-        setAnswerProgress(response.data.progress);
+      if (response.data?.data?.progress) {
+        const progress = response.data.data.progress;
+        setAnswerProgress(progress);
         console.log('✅ Answer submitted:', response.data.message);
         
+        // Update user's personality score in auth store
+        const updatedScore = progress.completionPercentage;
+        if (updatedScore !== undefined && user) {
+          useAuthStore.getState().updateUser({ 
+            personalityScore: updatedScore,
+            questionsAnswered: progress.totalAnswered
+          });
+        }
+        
         // Show milestone celebration if reached
-        if (response.data.progress.milestones?.reachedMilestone) {
-          // Could add a toast notification here
-          console.log('🎉 Milestone reached!', response.data.progress.milestones.milestoneNumber);
+        if (progress.milestones?.reachedMilestone) {
+          console.log('🎉 Milestone reached!', progress.milestones.milestoneNumber);
         }
       }
     } catch (error) {

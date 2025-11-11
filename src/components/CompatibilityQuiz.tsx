@@ -5,6 +5,8 @@ import { Brain, ArrowRight, ArrowLeft, LogOut, User } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getRandomQuestions, getHighWeightQuestions, Question } from '../data/questionBank';
 import { useAuthStore } from '../stores/authStore';
+import { questionsAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const CompatibilityQuiz = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -43,8 +45,37 @@ const CompatibilityQuiz = () => {
     setQuestions(unique);
   }, [state.personalityAnswers]);
 
-  const handleAnswer = (questionId: string, value: any) => {
+  const handleAnswer = async (questionId: string, value: any) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
+    
+    // Save answer to database immediately
+    try {
+      const response = await questionsAPI.submitAnswer(questionId, { answer: value });
+      
+      if (response.data?.success) {
+        console.log('✅ Answer saved:', { questionId, value, progress: response.data.data?.progress });
+        
+        // Update user's personality score in auth store
+        const updatedScore = response.data.data?.progress?.completionPercentage;
+        if (updatedScore !== undefined && user) {
+          useAuthStore.getState().updateUser({ personalityScore: updatedScore });
+        }
+        
+        // Show milestone celebrations
+        const milestone = response.data.data?.progress?.milestones;
+        if (milestone?.reachedMilestone) {
+          toast.success(response.data.message || `Milestone reached! ${milestone.milestoneNumber} questions answered`, {
+            icon: '🎉',
+            duration: 3000
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to save answer:', error);
+      toast.error('Failed to save answer. Please try again.', {
+        duration: 3000
+      });
+    }
   };
 
   const nextQuestion = () => {

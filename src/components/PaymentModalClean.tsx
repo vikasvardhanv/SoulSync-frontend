@@ -199,12 +199,26 @@ const PaymentModalClean = () => {
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-warm-800 mb-3">Have a promo code?</h3>
             <div className="flex gap-2">
-              <input type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} className="flex-1 px-3 py-2 border border-warm-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-300 bg-white/80" />
-              <button onClick={applyPromo} disabled={isRedeeming} className="px-4 py-2 rounded-lg bg-mint-500 text-white font-semibold hover:bg-mint-600 disabled:opacity-50">
+              <input 
+                type="text" 
+                value={promoCode} 
+                onChange={(e) => setPromoCode(e.target.value)} 
+                placeholder="Enter code (e.g., soulsync101)"
+                className="flex-1 px-4 py-3 border-2 border-warm-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-400 focus:border-coral-400 bg-white text-warm-800 placeholder-warm-400" 
+              />
+              <button 
+                onClick={applyPromo} 
+                disabled={isRedeeming || !promoCode.trim()} 
+                className="px-6 py-3 rounded-lg bg-gradient-to-r from-coral-500 to-peach-500 text-white font-bold hover:from-coral-600 hover:to-peach-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all whitespace-nowrap"
+              >
                 {isRedeeming ? 'Applying...' : 'Apply'}
               </button>
             </div>
-            {promoError && <p className="text-sm text-coral-600 mt-2">{promoError}</p>}
+            {promoError && <p className="text-sm text-coral-600 mt-2 font-medium">{promoError}</p>}
+            {promoApplied && <p className="text-sm text-mint-700 mt-2 font-semibold flex items-center gap-1">
+              <Check className="w-4 h-4" />
+              Promo code applied! Payment waived.
+            </p>}
           </div>
           <div className="mb-6 border-t border-warm-100 pt-6">
             <h3 className="text-lg font-semibold text-warm-800 mb-3 flex items-center gap-2">

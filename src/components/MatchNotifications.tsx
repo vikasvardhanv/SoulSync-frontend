@@ -156,7 +156,7 @@ const MatchNotifications: React.FC = () => {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute right-0 mt-2 w-96 max-h-[500px] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-warm-100 z-50"
+            className="absolute right-0 mt-2 w-96 max-h-[500px] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-warm-100 z-[90]"
           >
             {/* Header */}
             <div className="sticky top-0 bg-white border-b border-warm-100 p-4 rounded-t-2xl">
