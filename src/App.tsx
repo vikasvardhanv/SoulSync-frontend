@@ -19,13 +19,15 @@ import SignupForm from './components/auth/SignupForm';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
 import ProfileEdit from './components/ProfileEdit';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import Support from './components/Support';
 import { AppProvider, useApp } from './context/AppContext';
 import { useAuthStore } from './stores/authStore';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuthStore();
-  
+
   if (loading) {
     return (
       <div className="min-h-screen warm-gradient flex items-center justify-center">
@@ -36,30 +38,30 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
-  
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
 function AppContent() {
   const { user } = useAuthStore();
   const { dispatch } = useApp();
-  
+
   // Sync user data from auth store to app context
   useEffect(() => {
     if (user) {
-      dispatch({ 
-        type: 'SET_USER', 
+      dispatch({
+        type: 'SET_USER',
         payload: user
       });
     } else {
       dispatch({ type: 'SET_USER', payload: null });
     }
   }, [user, dispatch]);
-  
+
   return (
     <Router>
       <div className="min-h-screen warm-gradient">
@@ -69,17 +71,19 @@ function AppContent() {
             <Route path="/" element={<WelcomePage />} />
             <Route path="/login" element={<LoginForm />} />
             <Route path="/signup" element={<SignupForm />} />
-            
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/support" element={<Support />} />
+
             {/* Protected Routes */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
             } />
-            
+
             {/* Redirect /app to /dashboard for backward compatibility */}
             <Route path="/app" element={<Navigate to="/dashboard" replace />} />
-            
+
             {/* Legacy Routes (Protected) */}
             <Route path="/personality-quiz" element={
               <ProtectedRoute>

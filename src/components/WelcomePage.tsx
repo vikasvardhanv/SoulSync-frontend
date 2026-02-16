@@ -41,7 +41,7 @@ const WelcomePage = () => {
           >
             <Heart className="w-12 h-12 text-white" fill="currentColor" />
           </motion.div>
-          
+
           <motion.h1
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -50,7 +50,7 @@ const WelcomePage = () => {
           >
             SoulSync
           </motion.h1>
-          
+
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -59,7 +59,7 @@ const WelcomePage = () => {
           >
             Where Hearts Align with AI
           </motion.p>
-          
+
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -110,7 +110,7 @@ const WelcomePage = () => {
               <ChevronRight className="w-5 h-5" />
             </motion.button>
           </Link>
-          
+
           <div className="text-center">
             <span className="text-warm-600">Already have an account? </span>
             <Link
@@ -129,7 +129,11 @@ const WelcomePage = () => {
           transition={{ delay: 1.4 }}
           className="text-center mt-6 text-xs text-warm-500"
         >
-          <p>By continuing, you agree to our Terms & Privacy Policy</p>
+          <div className="flex justify-center gap-4 mb-2">
+            <Link to="/privacy-policy" className="hover:text-coral-400 transition-colors">Privacy Policy</Link>
+            <Link to="/support" className="hover:text-coral-400 transition-colors">Support</Link>
+          </div>
+          <p>&copy; {new Date().getFullYear()} SoulSync Solutions. All rights reserved.</p>
         </motion.div>
       </motion.div>
     </div>
