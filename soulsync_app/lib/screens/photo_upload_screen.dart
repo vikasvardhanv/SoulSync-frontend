@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../config/theme.dart';
 import '../services/match_service.dart';
+import '../services/face_check_service.dart';
 import '../widgets/common_widgets.dart';
 import 'package:provider/provider.dart';
 import '../services/image_service.dart';
@@ -21,9 +22,13 @@ class PhotoUploadScreen extends StatefulWidget {
 class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   final List<File?> _photos = List.generate(6, (_) => null);
   final ImagePicker _picker = ImagePicker();
+  final FaceCheckService _faceCheckService = FaceCheckService();
   bool _isUploading = false;
+  bool _isFaceChecking = false;
+  FaceCheckResult? _faceCheckResult;
 
   int get _photoCount => _photos.where((p) => p != null).length;
+  bool get _requiresFaceCheck => Platform.isIOS;
 
   Future<void> _pickImage(int index) async {
     try {
@@ -31,19 +36,86 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       if (image != null) {
         setState(() {
           _photos[index] = File(image.path);
+          _faceCheckResult = null;
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to pick image')),
-      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to pick image')));
     }
   }
 
   void _removeImage(int index) {
     setState(() {
       _photos[index] = null;
+      _faceCheckResult = null;
     });
+  }
+
+  Future<void> _runFaceCheck() async {
+    final referencePhoto = _photos.firstWhere(
+      (photo) => photo != null,
+      orElse: () => null,
+    );
+    if (referencePhoto == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Upload at least 1 photo before running face check.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    final XFile? selfie = await _picker.pickImage(
+      source: ImageSource.camera,
+      preferredCameraDevice: CameraDevice.front,
+      imageQuality: 90,
+    );
+    if (selfie == null) return;
+
+    setState(() => _isFaceChecking = true);
+
+    try {
+      await _faceCheckService.initializeSdk();
+      final result = await _faceCheckService.performFaceCheck(
+        referenceImagePath: referencePhoto.path,
+        selfieImagePath: selfie.path,
+      );
+      if (!mounted) return;
+
+      setState(() {
+        _faceCheckResult = result;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.verified
+                ? 'Face check passed (${(result.similarity * 100).toStringAsFixed(1)}% similarity)'
+                : 'Face check failed: ${result.reason}',
+          ),
+          backgroundColor: result.verified ? Colors.green : Colors.redAccent,
+        ),
+      );
+    } on FaceCheckException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Face check failed. Please retry with good lighting.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isFaceChecking = false);
+    }
   }
 
   Future<void> _continue() async {
@@ -57,21 +129,32 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       return;
     }
 
+    if (_requiresFaceCheck && _faceCheckResult?.verified != true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Complete face check before continuing.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isUploading = true);
 
     try {
       // Upload photos
-      final filePaths = _photos.where((p) => p != null).map((p) => p!.path).toList();
+      final filePaths =
+          _photos.where((p) => p != null).map((p) => p!.path).toList();
       if (filePaths.isNotEmpty) {
         await ImageService().uploadMultipleImages(filePaths);
         // Refresh user data to get new photos
         if (mounted) {
-           await context.read<AuthProvider>().checkAuth();
+          await context.read<AuthProvider>().checkAuth();
         }
       }
-      
+
       if (!mounted) return;
-      
+
       // Navigate to Payment
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const PaymentScreen()),
@@ -109,7 +192,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   }
 
   Widget _buildResultDialog(bool hasMatches) {
-     return Dialog(
+    return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
       backgroundColor: const Color(0xFFFFFBF5), // Warm background
       elevation: 0,
@@ -118,25 +201,28 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           constraints: const BoxConstraints(maxWidth: 400),
-          child: hasMatches ? _buildMatchFoundContent() : _buildNoMatchContent(),
+          child:
+              hasMatches ? _buildMatchFoundContent() : _buildNoMatchContent(),
         ),
       ),
     );
   }
-  
+
   Widget _buildMatchFoundContent() {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 96, height: 96,
+          width: 96,
+          height: 96,
           decoration: const BoxDecoration(
             color: SoulSyncColors.coral100,
             shape: BoxShape.circle,
           ),
           child: Center(
             child: Container(
-              width: 48, height: 48,
+              width: 48,
+              height: 48,
               decoration: const BoxDecoration(
                 color: SoulSyncColors.coral500,
                 shape: BoxShape.circle,
@@ -181,7 +267,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 80, height: 80,
+          width: 80,
+          height: 80,
           decoration: BoxDecoration(
             color: const Color(0xFFFF9A8B).withOpacity(0.2),
             shape: BoxShape.circle,
@@ -196,7 +283,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           ),
         ).animate().fadeIn().slideY(begin: 0.2, end: 0),
         const SizedBox(height: 20),
-        
+
         Text(
           "Oops! 😅",
           style: GoogleFonts.quicksand(
@@ -206,7 +293,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           ),
         ),
         const SizedBox(height: 16),
-         Text(
+        Text(
           "No potential matches found right now. Don't worry! We'll notify you when we find compatible matches based on your personality score.",
           textAlign: TextAlign.center,
           style: GoogleFonts.inter(
@@ -216,8 +303,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        
-         // Tips Card
+
+        // Tips Card
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -229,7 +316,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                 color: const Color(0xFF5D4037).withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
-              )
+              ),
             ],
           ),
           child: Column(
@@ -244,26 +331,32 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              _buildTipItem("Increase your personality score by answering a few more questions."),
+              _buildTipItem(
+                "Increase your personality score by answering a few more questions.",
+              ),
               const SizedBox(height: 8),
-              _buildTipItem("Update your profile with interests and a short bio."),
+              _buildTipItem(
+                "Update your profile with interests and a short bio.",
+              ),
               const SizedBox(height: 8),
-              _buildTipItem("Check back later as new users join throughout the day."),
+              _buildTipItem(
+                "Check back later as new users join throughout the day.",
+              ),
             ],
           ),
         ),
         const SizedBox(height: 32),
-        
+
         FriendlyButton(
           text: 'Answer more questions',
           onPressed: () {
             Navigator.of(context).popUntil((route) => route.isFirst);
-             // Note: In real app, we might want to navigate explicitly to quiz
-             // For now popUntil root handles it if Quiz is root or accessible
+            // Note: In real app, we might want to navigate explicitly to quiz
+            // For now popUntil root handles it if Quiz is root or accessible
           },
         ),
         const SizedBox(height: 16),
-        
+
         SizedBox(
           width: double.infinity,
           child: TextButton(
@@ -280,7 +373,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
             ),
             child: Text(
               "Back to Dashboard",
-               style: GoogleFonts.inter(
+              style: GoogleFonts.inter(
                 color: const Color(0xFF5D4037),
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
@@ -291,7 +384,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       ],
     );
   }
-  
+
   Widget _buildTipItem(String text) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,7 +408,6 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -324,7 +416,10 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: SoulSyncColors.warm800),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: SoulSyncColors.warm800,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -358,7 +453,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            
+
             // Photo Grid
             Expanded(
               child: GridView.count(
@@ -372,81 +467,170 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                   return GestureDetector(
                     onTap: () => photo == null ? _pickImage(index) : null,
                     child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: photo != null ? SoulSyncColors.coral500 : const Color(0xFFFFCCBC),
-                          width: photo != null ? 2 : 1,
-                        ),
-                        boxShadow: [
-                           BoxShadow(
-                             color: const Color(0xFF5D4037).withOpacity(0.05),
-                             blurRadius: 8,
-                             offset: const Offset(0, 4),
-                           )
-                        ],
-                      ),
-                      child: photo != null
-                          ? Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: Image.file(photo, fit: BoxFit.cover),
-                                ),
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: GestureDetector(
-                                    onTap: () => _removeImage(index),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(Icons.close, size: 16, color: Colors.red),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFFFF0EC),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.add, color: SoulSyncColors.coral500),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  "Add Photo",
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: SoulSyncColors.coral400,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color:
+                                  photo != null
+                                      ? SoulSyncColors.coral500
+                                      : const Color(0xFFFFCCBC),
+                              width: photo != null ? 2 : 1,
                             ),
-                    ).animate().fadeIn(delay: (index * 100).ms).scale(duration: 300.ms),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF5D4037,
+                                ).withOpacity(0.05),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child:
+                              photo != null
+                                  ? Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(14),
+                                        child: Image.file(
+                                          photo,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 4,
+                                        right: 4,
+                                        child: GestureDetector(
+                                          onTap: () => _removeImage(index),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.white,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.close,
+                                              size: 16,
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                  : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFFFF0EC),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.add,
+                                          color: SoulSyncColors.coral500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        "Add Photo",
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: SoulSyncColors.coral400,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                        )
+                        .animate()
+                        .fadeIn(delay: (index * 100).ms)
+                        .scale(duration: 300.ms),
                   );
                 }),
               ),
             ),
-            
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: FriendlyCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          _faceCheckResult?.verified == true
+                              ? Icons.verified_user_outlined
+                              : Icons.face_retouching_natural_outlined,
+                          color:
+                              _faceCheckResult?.verified == true
+                                  ? Colors.green
+                                  : SoulSyncColors.coral500,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Face Verification',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _requiresFaceCheck
+                          ? 'After uploading photos, verify your face with a live selfie to prevent impersonation.'
+                          : 'Face verification currently runs on iOS builds.',
+                      style: GoogleFonts.inter(
+                        color: SoulSyncColors.warm700,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                    if (_faceCheckResult != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _faceCheckResult!.verified
+                            ? 'Verified. Liveness ${(100 * _faceCheckResult!.liveness).toStringAsFixed(1)}%, similarity ${(100 * _faceCheckResult!.similarity).toStringAsFixed(1)}%.'
+                            : 'Verification not passed: ${_faceCheckResult!.reason}',
+                        style: TextStyle(
+                          color:
+                              _faceCheckResult!.verified
+                                  ? Colors.green.shade700
+                                  : Colors.red.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    FriendlyButton(
+                      text: _isFaceChecking ? 'Verifying...' : 'Run Face Check',
+                      onPressed:
+                          (_isFaceChecking || !_requiresFaceCheck)
+                              ? null
+                              : _runFaceCheck,
+                      color: _requiresFaceCheck ? null : Colors.grey.shade400,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
             // Bottom Button
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: FriendlyButton(
-                text: _isUploading ? 'Uploading...' : 'Continue to Quiz',
+                text: _isUploading ? 'Uploading...' : 'Continue to Payment',
                 onPressed: _isUploading ? null : _continue,
-                color: _photoCount >= 2 ? SoulSyncColors.coral500 : Colors.grey.shade400,
+                color:
+                    _photoCount >= 2 &&
+                            (!_requiresFaceCheck ||
+                                _faceCheckResult?.verified == true)
+                        ? SoulSyncColors.coral500
+                        : Colors.grey.shade400,
               ),
             ),
           ],
@@ -465,7 +649,8 @@ class AnalyzingOverlay extends StatefulWidget {
   State<AnalyzingOverlay> createState() => _AnalyzingOverlayState();
 }
 
-class _AnalyzingOverlayState extends State<AnalyzingOverlay> with SingleTickerProviderStateMixin {
+class _AnalyzingOverlayState extends State<AnalyzingOverlay>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   int _step = 0;
   final List<String> _steps = [
@@ -474,17 +659,30 @@ class _AnalyzingOverlayState extends State<AnalyzingOverlay> with SingleTickerPr
     "Scanning potential matches...",
     "Calculating relationship chemistry...",
   ];
-  final List<IconData> _stepIcons = [Icons.psychology, Icons.favorite, Icons.people, Icons.bolt];
-  final List<Color> _stepColors = [Color(0xFFF48FB1), Color(0xFFEF5350), Color(0xFFFFB74D), Color(0xFFFFF176)];
+  final List<IconData> _stepIcons = [
+    Icons.psychology,
+    Icons.favorite,
+    Icons.people,
+    Icons.bolt,
+  ];
+  final List<Color> _stepColors = [
+    Color(0xFFF48FB1),
+    Color(0xFFEF5350),
+    Color(0xFFFFB74D),
+    Color(0xFFFFF176),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 4));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    );
     _controller.repeat();
     _startSequence();
   }
-  
+
   void _startSequence() async {
     for (int i = 0; i < 4; i++) {
       if (!mounted) return;
@@ -504,7 +702,9 @@ class _AnalyzingOverlayState extends State<AnalyzingOverlay> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBF5).withOpacity(0.95), // Translucent cream
+      backgroundColor: const Color(
+        0xFFFFFBF5,
+      ).withOpacity(0.95), // Translucent cream
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
@@ -513,7 +713,8 @@ class _AnalyzingOverlayState extends State<AnalyzingOverlay> with SingleTickerPr
             children: [
               // Main Pulse Icon
               Container(
-                width: 120, height: 120,
+                width: 120,
+                height: 120,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
@@ -522,17 +723,29 @@ class _AnalyzingOverlayState extends State<AnalyzingOverlay> with SingleTickerPr
                     end: Alignment.bottomRight,
                   ),
                   boxShadow: [
-                    BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, 10))
-                  ]
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 20,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
                 ),
                 child: Center(
-                   child: const Icon(Icons.favorite, color: Colors.white, size: 50)
+                  child: const Icon(
+                        Icons.favorite,
+                        color: Colors.white,
+                        size: 50,
+                      )
                       .animate(onPlay: (c) => c.repeat(reverse: true))
-                      .scale(begin: const Offset(1,1), end: const Offset(1.2,1.2), duration: 800.ms),
+                      .scale(
+                        begin: const Offset(1, 1),
+                        end: const Offset(1.2, 1.2),
+                        duration: 800.ms,
+                      ),
                 ),
               ),
               const SizedBox(height: 40),
-              
+
               Text(
                 "SoulSyncing You Now...",
                 style: GoogleFonts.quicksand(
@@ -546,7 +759,11 @@ class _AnalyzingOverlayState extends State<AnalyzingOverlay> with SingleTickerPr
               Text(
                 "Your answers are being analyzed by our AI compatibility engine. We're finding someone who gets you. 💫",
                 textAlign: TextAlign.center,
-                 style: GoogleFonts.inter(color: const Color(0xFF795548), fontSize: 16, height: 1.5),
+                style: GoogleFonts.inter(
+                  color: const Color(0xFF795548),
+                  fontSize: 16,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 48),
 
@@ -554,7 +771,7 @@ class _AnalyzingOverlayState extends State<AnalyzingOverlay> with SingleTickerPr
               ...List.generate(_steps.length, (index) {
                 final isActive = index == _step;
                 final isPast = index < _step;
-                
+
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   margin: const EdgeInsets.only(bottom: 12),
@@ -563,21 +780,31 @@ class _AnalyzingOverlayState extends State<AnalyzingOverlay> with SingleTickerPr
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
-                      if (isActive) 
-                        BoxShadow(color: _stepColors[index].withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))
-                    ]
+                      if (isActive)
+                        BoxShadow(
+                          color: _stepColors[index].withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                    ],
                   ),
                   child: Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: (isActive || isPast) ? _stepColors[index].withOpacity(0.2) : Colors.grey.withOpacity(0.1),
+                          color:
+                              (isActive || isPast)
+                                  ? _stepColors[index].withOpacity(0.2)
+                                  : Colors.grey.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           _stepIcons[index],
-                          color: (isActive || isPast) ? _stepColors[index] : Colors.grey.withOpacity(0.4),
+                          color:
+                              (isActive || isPast)
+                                  ? _stepColors[index]
+                                  : Colors.grey.withOpacity(0.4),
                           size: 20,
                         ),
                       ),
@@ -587,25 +814,36 @@ class _AnalyzingOverlayState extends State<AnalyzingOverlay> with SingleTickerPr
                           _steps[index],
                           style: GoogleFonts.inter(
                             color: const Color(0xFF5D4037),
-                            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                            fontWeight:
+                                isActive ? FontWeight.w600 : FontWeight.w500,
                             fontSize: 14,
                           ),
                         ),
                       ),
                       if (isPast)
-                        const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                        const Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 20,
+                        )
                       else if (isActive)
                         SizedBox(
-                          width: 16, height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(_stepColors[index])),
-                        )
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(
+                              _stepColors[index],
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ).animate().fadeIn(delay: (index * 200).ms).slideX();
               }),
 
               const Spacer(),
-              
+
               // Bottom Progress
               LinearProgressIndicator(
                 value: (_step + 1) / 5, // Approximate progress
@@ -617,7 +855,10 @@ class _AnalyzingOverlayState extends State<AnalyzingOverlay> with SingleTickerPr
               const SizedBox(height: 12),
               Text(
                 "${((_step + 1) / 5 * 100).toInt()}% Complete",
-                style: GoogleFonts.inter(color: const Color(0xFFA1887F), fontWeight: FontWeight.w600),
+                style: GoogleFonts.inter(
+                  color: const Color(0xFFA1887F),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 20),
             ],

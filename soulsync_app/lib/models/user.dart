@@ -48,6 +48,13 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    double? parseFiniteDouble(dynamic value) {
+      if (value == null) return null;
+      final parsed = value is num ? value.toDouble() : double.tryParse(value.toString());
+      if (parsed == null || !parsed.isFinite || parsed.isNaN) return null;
+      return parsed;
+    }
+
     return User(
       id: json['id'] ?? '',
       email: json['email'] ?? '',
@@ -58,8 +65,8 @@ class User {
       city: json['city'],
       state: json['state'],
       country: json['country'],
-      latitude: json['latitude']?.toDouble(),
-      longitude: json['longitude']?.toDouble(),
+      latitude: parseFiniteDouble(json['latitude']),
+      longitude: parseFiniteDouble(json['longitude']),
       gender: json['gender'],
       lookingFor: json['lookingFor'],
       interests: List<String>.from(json['interests'] ?? []),

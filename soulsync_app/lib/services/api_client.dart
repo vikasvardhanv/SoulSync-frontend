@@ -10,6 +10,7 @@ class ApiClient {
   bool _isRefreshing = false;
 
   ApiClient._internal() {
+    print('🌐 ApiClient baseUrl: ${ApiConfig.baseUrl}');
     dio = Dio(BaseOptions(
       baseUrl: ApiConfig.baseUrl,
       connectTimeout: const Duration(seconds: 30),

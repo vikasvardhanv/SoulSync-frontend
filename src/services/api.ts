@@ -2,23 +2,18 @@
 import axios, { AxiosError } from 'axios';
 import toast from 'react-hot-toast';
 
-// Determine API URL based on environment
+/**
+ * Backend URL configuration
+ * Change via environment variable: VITE_API_URL
+ * Default production: https://soulsync-backend-k2bt.onrender.com/api
+ */
 const getApiUrl = () => {
-  // Check if we're in development mode
-  if (import.meta.env.DEV) {
-    return import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  }
-  
-  // In production, use the backend domain
-  return import.meta.env.VITE_API_URL || 'https://soulsync.solutions/api';
+  return import.meta.env.VITE_API_URL || 'https://soulsync-backend-k2bt.onrender.com/api';
 };
 
 const API_BASE_URL = getApiUrl();
 
-// Only log in development
-if (import.meta.env.DEV) {
-  console.log('🌐 API Base URL:', API_BASE_URL);
-}
+console.log('🌐 API Base URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -285,6 +280,15 @@ export const messagesAPI = {
 export const usersAPI = {
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data: any) => api.put('/users/profile', data),
+  getBoundaries: () => api.get('/users/boundaries'),
+  updateBoundaries: (data: {
+    dealBreakers?: string[];
+    mustHaves?: string[];
+    minAge?: number | null;
+    maxAge?: number | null;
+    maxDistance?: number | null;
+    preferredGender?: 'male' | 'female' | 'non-binary' | 'everyone' | null;
+  }) => api.put('/users/boundaries', data),
   getPotentialMatches: (params?: { limit?: number; offset?: number }) => 
     api.get('/users/matches', { params }),
   getMyMatches: () => api.get('/users/matches/my'),

@@ -7,11 +7,16 @@ class MatchService {
   final Dio _dio = ApiClient().dio;
 
   Future<List<Match>> getMatches() async {
-    final response = await _dio.get(ApiConfig.matches);
-    if (response.data['success'] == true) {
-      return (response.data['data']['matches'] as List? ?? [])
-          .map((m) => Match.fromJson(m))
-          .toList();
+    try {
+      final response = await _dio.get(ApiConfig.matches);
+      if (response.data['success'] == true) {
+        return (response.data['data']['matches'] as List? ?? [])
+            .map((m) => Match.fromJson(m))
+            .toList();
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      if (e.response?.statusCode == 401) return [];
     }
     return [];
   }
@@ -39,50 +44,70 @@ class MatchService {
   }
 
   Future<Match?> getMatchDetails(String matchId) async {
-    final response = await _dio.get(ApiConfig.matchDetails(matchId));
-    if (response.data['success'] == true) {
-      return Match.fromJson(response.data['data']['match']);
+    try {
+      final response = await _dio.get(ApiConfig.matchDetails(matchId));
+      if (response.data['success'] == true) {
+        return Match.fromJson(response.data['data']['match']);
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      if (e.response?.statusCode == 401) return null;
     }
     return null;
   }
 
   Future<List<dynamic>> getPotentialMatches({int? limit, int? offset}) async {
-    final response = await _dio.get(ApiConfig.potentialMatches, queryParameters: {
-      if (limit != null) 'limit': limit,
-      if (offset != null) 'offset': offset,
-    });
-    if (response.data['success'] == true) {
-      final matches = response.data['data']['matches'] as List? ?? [];
-      return matches.map((m) {
-        if (m['photos'] != null) {
-          m['photos'] = (m['photos'] as List).map((p) {
-             final s = p.toString();
-             if (s.startsWith('http') || s.startsWith('data:')) return s;
-             return ApiConfig.renderImage(s);
-          }).toList();
-        }
-        return m;
-      }).toList();
+    try {
+      final response = await _dio.get(ApiConfig.potentialMatches, queryParameters: {
+        if (limit != null) 'limit': limit,
+        if (offset != null) 'offset': offset,
+      });
+      if (response.data['success'] == true) {
+        final matches = response.data['data']['matches'] as List? ?? [];
+        return matches.map((m) {
+          if (m['photos'] != null) {
+            m['photos'] = (m['photos'] as List).map((p) {
+               final s = p.toString();
+               if (s.startsWith('http') || s.startsWith('data:')) return s;
+               return ApiConfig.renderImage(s);
+            }).toList();
+          }
+          return m;
+        }).toList();
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      if (e.response?.statusCode == 401) return [];
     }
     return [];
   }
 
   Future<List<Match>> getPendingMatches() async {
-    final response = await _dio.get(ApiConfig.pendingMatches);
-    if (response.data['success'] == true) {
-      return (response.data['data']['matches'] as List? ?? [])
-          .map((m) => Match.fromJson(m))
-          .toList();
+    try {
+      final response = await _dio.get(ApiConfig.pendingMatches);
+      if (response.data['success'] == true) {
+        return (response.data['data']['matches'] as List? ?? [])
+            .map((m) => Match.fromJson(m))
+            .toList();
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      if (e.response?.statusCode == 401) return [];
     }
     return [];
   }
 
   Future<List<Match>> getAcceptedMatches() async {
-    final response = await _dio.get(ApiConfig.acceptedMatches);
-    if (response.data['success'] == true) {
-      return (response.data['data']['matches'] as List? ?? [])
-          .map((m) => Match.fromJson(m))
-          .toList();
+    try {
+      final response = await _dio.get(ApiConfig.acceptedMatches);
+      if (response.data['success'] == true) {
+        return (response.data['data']['matches'] as List? ?? [])
+            .map((m) => Match.fromJson(m))
+            .toList();
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      if (e.response?.statusCode == 401) return [];
     }
     return [];
   }

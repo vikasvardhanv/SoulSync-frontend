@@ -10,9 +10,6 @@ class AuthProvider extends ChangeNotifier {
   
   SocketService get socketService => _socketService;
 
-  // ... (existing code variables)
-
-
   User? _user;
   bool _loading = true;
   String? _error;

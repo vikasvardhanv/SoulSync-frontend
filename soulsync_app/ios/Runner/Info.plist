@@ -25,7 +25,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>We need camera access for taking profile photos.</string>
+	<string>We need camera access for profile photos and secure face verification.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photo library to choose profile pictures.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

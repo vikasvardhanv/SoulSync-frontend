@@ -116,6 +116,20 @@ const Settings = () => {
                 </div>
                 <ChevronRight className="w-5 h-5 text-warm-400" />
               </button>
+
+              <button
+                onClick={() => navigate('/boundaries')}
+                className="w-full flex items-center justify-between p-4 hover:bg-warm-50 rounded-xl transition-colors text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <Shield className="w-5 h-5 text-warm-600" />
+                  <div>
+                    <p className="font-medium text-warm-800">Boundary Rules</p>
+                    <p className="text-sm text-warm-600">Set deal-breakers and must-haves</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-warm-400" />
+              </button>
             </div>
           </motion.div>
 

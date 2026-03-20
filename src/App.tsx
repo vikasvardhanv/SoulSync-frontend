@@ -18,6 +18,7 @@ import LoginForm from './components/auth/LoginForm';
 import SignupForm from './components/auth/SignupForm';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
+import BoundariesSettings from './components/BoundariesSettings';
 import ProfileEdit from './components/ProfileEdit';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import Support from './components/Support';
@@ -140,6 +141,11 @@ function AppContent() {
             <Route path="/settings" element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            } />
+            <Route path="/boundaries" element={
+              <ProtectedRoute>
+                <BoundariesSettings />
               </ProtectedRoute>
             } />
             <Route path="/profile" element={

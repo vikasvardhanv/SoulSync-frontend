@@ -1,13 +1,15 @@
-import 'dart:io';
-
 class ApiConfig {
-  static String get baseUrl {
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5001/api';
-    }
-    return 'http://localhost:5001/api'; 
-  }
-  // static const String baseUrl = 'https://soulsync.solutions/api';
+  /// Backend URL from environment variable - change this in build configuration
+  /// Default production: https://backend.soulsync.solutions/api
+  /// To override at build time:
+  /// flutter build ios --dart-define=API_BASE_URL=https://your-backend.com/api
+  static const String _apiBaseUrlFromEnv = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://backend.soulsync.solutions/api',
+  );
+
+  /// Production-ready API base URL - change via environment variable only
+  static String get baseUrl => _apiBaseUrlFromEnv;
 
   // Auth endpoints
   static const String login = '/auth/login';
@@ -23,6 +25,7 @@ class ApiConfig {
 
   // User endpoints
   static const String userProfile = '/users/profile';
+  static const String userBoundaries = '/users/boundaries';
   static const String potentialMatches = '/users/matches';
   static const String myMatches = '/users/matches/my';
 

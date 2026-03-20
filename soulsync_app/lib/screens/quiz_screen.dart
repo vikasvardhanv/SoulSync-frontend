@@ -29,6 +29,32 @@ class _QuizScreenState extends State<QuizScreen> {
     'values': '💎', 'communication': '💬', 'relationship': '❤️',
   };
 
+  double _safeProgress(num numerator, num denominator) {
+    if (denominator == 0) return 0.0;
+    final value = (numerator / denominator).toDouble();
+    if (!value.isFinite || value.isNaN) return 0.0;
+    return value.clamp(0.0, 1.0).toDouble();
+  }
+
+  double _safeSliderValue(dynamic raw, int min, int max) {
+    final minValue = (min <= max ? min : max).toDouble();
+    final maxValue = (max >= min ? max : min).toDouble();
+    final midpoint = ((minValue + maxValue) / 2);
+
+    double parsed;
+    if (raw is num) {
+      parsed = raw.toDouble();
+    } else {
+      parsed = double.tryParse(raw?.toString() ?? '') ?? midpoint;
+    }
+
+    if (!parsed.isFinite || parsed.isNaN) {
+      parsed = midpoint;
+    }
+
+    return parsed.clamp(minValue, maxValue).toDouble();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -346,7 +372,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
-                      value: _questions.isEmpty ? 0 : (_currentIndex + 1) / _questions.length,
+                      value: _questions.isEmpty ? 0 : _safeProgress(_currentIndex + 1, _questions.length),
                       backgroundColor: const Color(0xFFFFEBE8),
                       valueColor: const AlwaysStoppedAnimation(SoulSyncColors.coral400),
                       minHeight: 6,
@@ -504,7 +530,9 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget _buildScaleAnswer(Question question) {
     final min = question.minValue ?? 1;
     final max = question.maxValue ?? 10;
-    final double value = (_selectedAnswer as num?)?.toDouble() ?? 5.0;
+    final double value = _safeSliderValue(_selectedAnswer, min, max);
+    final safeMin = (min <= max ? min : max).toDouble();
+    final safeMax = (max >= min ? max : min).toDouble();
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -529,8 +557,8 @@ class _QuizScreenState extends State<QuizScreen> {
           ),
           child: Slider(
             value: value,
-            min: min.toDouble(),
-            max: max.toDouble(),
+            min: safeMin,
+            max: safeMax,
             divisions: (max - min) > 0 ? (max - min) : 1,
             onChanged: (v) => setState(() => _selectedAnswer = v.round()),
           ),
@@ -647,6 +675,13 @@ class _AnalyzingOverlayState extends State<_AnalyzingOverlay> with SingleTickerP
   ];
   final List<IconData> _stepIcons = [Icons.psychology, Icons.favorite, Icons.people, Icons.bolt];
   final List<Color> _stepColors = [Color(0xFFF48FB1), Color(0xFFEF5350), Color(0xFFFFB74D), Color(0xFFFFF176)];
+
+  double _safeProgress(num numerator, num denominator) {
+    if (denominator == 0) return 0.0;
+    final value = (numerator / denominator).toDouble();
+    if (!value.isFinite || value.isNaN) return 0.0;
+    return value.clamp(0.0, 1.0).toDouble();
+  }
 
   @override
   void initState() {
@@ -779,7 +814,7 @@ class _AnalyzingOverlayState extends State<_AnalyzingOverlay> with SingleTickerP
               
               // Bottom Progress
               LinearProgressIndicator(
-                value: (_step + 1) / 5, // Approximate progress
+                value: _safeProgress(_step + 1, 5), // Approximate progress
                 backgroundColor: const Color(0xFFFFEBE8),
                 valueColor: const AlwaysStoppedAnimation(Color(0xFFFF8A80)),
                 minHeight: 8,
@@ -787,7 +822,7 @@ class _AnalyzingOverlayState extends State<_AnalyzingOverlay> with SingleTickerP
               ),
               const SizedBox(height: 12),
               Text(
-                "${((_step + 1) / 5 * 100).toInt()}% Complete",
+                "${(_safeProgress(_step + 1, 5) * 100).toInt()}% Complete",
                 style: GoogleFonts.inter(color: const Color(0xFFA1887F), fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 20),

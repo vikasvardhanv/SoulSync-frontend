@@ -343,3 +343,33 @@ For support, email support@soulsync.solutions or open an issue in the repository
 ---
 
 Made with ❤️ by the SoulSync Team
+
+
+
+### Your algorithm (question-based, robust version)
+
+  Use a two-stage scorer:
+
+  1. Hard filters
+
+  - Deal-breakers, location radius, age bounds, relationship intent, orientation, language.
+
+  2. Compatibility score
+
+  - S = 0.45*Values + 0.20*Lifestyle + 0.15*Communication + 0.10*Intent + 0.10*Reliability
+  - Values/Lifestyle/Communication come from questionnaire similarity (with per-question importance weights set
+    by user).
+  - Reliability includes behavior quality signals (response consistency, cancellation/ghosting patterns, report
+    history weightings).
+
+  3. Mutuality
+
+  - Final match score uses reciprocal score (not one-way attraction only).
+
+  4. Safety re-rank
+
+  - Down-rank or block candidates above risk threshold.
+
+  5. Learning loop
+
+  - Use feedback from likes/skips/replies/date outcomes to update weights, but never override user deal-breakers.

@@ -15,10 +15,12 @@ import 'screens/chat_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/payment_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/differentiation_screen.dart';
+import 'screens/boundaries_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Set preferred orientations
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -26,12 +28,14 @@ void main() {
   ]);
 
   // Set system overlay style
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    systemNavigationBarColor: Colors.white,
-    systemNavigationBarIconBrightness: Brightness.dark,
-  ));
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
 
   runApp(const SoulSyncApp());
 }
@@ -43,10 +47,12 @@ class SoulSyncApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) {
-          debugPrint('SoulSync: Initializing AuthProvider');
-          return AuthProvider();
-        }),
+        ChangeNotifierProvider(
+          create: (_) {
+            debugPrint('SoulSync: Initializing AuthProvider');
+            return AuthProvider();
+          },
+        ),
       ],
       child: MaterialApp(
         title: 'SoulSync',
@@ -66,6 +72,8 @@ class SoulSyncApp extends StatelessWidget {
           '/profile': (context) => const ProfileScreen(),
           '/payment': (context) => const PaymentScreen(),
           '/settings': (context) => const SettingsScreen(),
+          '/boundaries': (context) => const BoundariesScreen(),
+          '/differentiation': (context) => const DifferentiationScreen(),
         },
       ),
     );

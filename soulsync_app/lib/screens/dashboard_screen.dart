@@ -6,6 +6,7 @@ import '../config/theme.dart';
 import '../providers/auth_provider.dart';
 import '../services/match_service.dart';
 import '../services/location_service.dart';
+import 'compatibility_lab_screen.dart';
 import '../widgets/common_widgets.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -25,14 +26,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _loadPotentialMatches();
     
     // Initialize Location Service
     LocationService().init();
     
     // Refresh user data (scores, etc.) whenever Dashboard loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AuthProvider>().checkAuth();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.checkAuth();
+      if (!mounted) return;
+      if (authProvider.isAuthenticated) {
+        await _loadPotentialMatches();
+      } else {
+        setState(() => _loadingMatches = false);
+      }
     });
     
     // Connect socket if not connected (failsafe)
@@ -47,7 +54,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('New message from ${data['senderName'] ?? 'someone'}!'),
-            action: SnackBarAction(label: 'View', onPressed: () => setState(() => _currentIndex = 2)),
+            action: SnackBarAction(label: 'View', onPressed: () => setState(() => _currentIndex = 3)),
             behavior: SnackBarBehavior.floating,
             backgroundColor: SoulSyncColors.coral500,
           ),
@@ -74,6 +81,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             index: _currentIndex,
             children: [
               _buildDiscoverTab(),
+              const CompatibilityLabScreen(),
               _buildMatchesTab(),
               _buildMessagesTab(),
               _buildProfileTab(),
@@ -91,6 +99,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           onTap: (i) => setState(() => _currentIndex = i),
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Discover'),
+            BottomNavigationBarItem(icon: Icon(Icons.science_outlined), label: 'Lab'),
             BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Matches'),
             BottomNavigationBarItem(icon: Icon(Icons.chat_bubble), label: 'Messages'),
             BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
@@ -131,7 +140,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Hi, ${user?.name ?? 'there'} 👋', style: Theme.of(context).textTheme.headlineMedium),
-                    Text("Let's find your soul match", style: TextStyle(color: SoulSyncColors.warm600, fontSize: 14)),
+                    Text('Run your compatibility lab first', style: TextStyle(color: SoulSyncColors.warm600, fontSize: 14)),
                   ],
                 ),
               ),
@@ -163,6 +172,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             children: [
               Expanded(
+                child: _actionButton(Icons.science_outlined, 'Open Lab', SoulSyncColors.softLavender, () {
+                  setState(() => _currentIndex = 1);
+                }),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
                 child: _actionButton(Icons.quiz, 'Take Quiz', SoulSyncColors.gentleMint, () {
                   Navigator.pushNamed(context, '/quiz').then((_) => _loadPotentialMatches());
                 }),
@@ -176,7 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 24),
 
           // Discover section
-          Text('Discover Matches', style: Theme.of(context).textTheme.headlineMedium),
+          Text('Candidate Pool', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
 
           if (_loadingMatches)
@@ -190,7 +205,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Text('No matches yet', style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 8),
                   Text(
-                    'Complete your profile and take the quiz to discover compatible matches!',
+                    'Complete your profile, then run the lab sprint to unlock stronger-fit candidates.',
                     style: TextStyle(color: SoulSyncColors.warm600),
                     textAlign: TextAlign.center,
                   ),
@@ -365,6 +380,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildMatchesTab() {
+    final isAuthenticated = context.watch<AuthProvider>().isAuthenticated;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -375,72 +391,87 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Text('People who like you back', style: TextStyle(color: SoulSyncColors.warm600)),
           const SizedBox(height: 20),
           Expanded(
-            child: FutureBuilder<List>(
-              future: _matchService.getAcceptedMatches(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const LoadingWidget(message: 'Loading matches...');
-                }
-                final matches = snapshot.data ?? [];
-                if (matches.isEmpty) {
-                  return Center(
+            child: !isAuthenticated
+                ? Center(
                     child: FriendlyCard(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.favorite_border, size: 48, color: SoulSyncColors.peach400),
+                          const Icon(Icons.lock_outline, size: 48, color: SoulSyncColors.peach400),
                           const SizedBox(height: 12),
-                          Text('No matches yet', style: Theme.of(context).textTheme.titleLarge),
+                          Text('Sign in to see matches', style: Theme.of(context).textTheme.titleLarge),
                           const SizedBox(height: 8),
-                          Text('Start swiping to find your match!', style: TextStyle(color: SoulSyncColors.warm600)),
+                          Text('Your matches will appear after login.', style: TextStyle(color: SoulSyncColors.warm600)),
                         ],
                       ),
                     ),
-                  );
-                }
-                return ListView.builder(
-                  itemCount: matches.length,
-                  itemBuilder: (context, index) {
-                    final m = matches[index];
-                    final otherUser = m.userReceiver ?? m.userInitiator;
-                    return FriendlyCard(
-                      padding: const EdgeInsets.all(12),
-                      onTap: () {
-                        if (otherUser != null) {
-                          Navigator.pushNamed(context, '/chat', arguments: {'userId': otherUser.id, 'name': otherUser.name});
-                        }
-                      },
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 28,
-                            backgroundColor: SoulSyncColors.coral200,
-                            child: otherUser?.photos.isNotEmpty == true
-                                ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(28),
-                                    child: CachedNetworkImage(imageUrl: otherUser!.photos.first, width: 56, height: 56, fit: BoxFit.cover),
-                                  )
-                                : Text(otherUser?.name[0].toUpperCase() ?? '?', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
+                  )
+                : FutureBuilder<List>(
+                    future: _matchService.getAcceptedMatches(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const LoadingWidget(message: 'Loading matches...');
+                      }
+                      final matches = snapshot.data ?? [];
+                      if (matches.isEmpty) {
+                        return Center(
+                          child: FriendlyCard(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(otherUser?.name ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                                if (m.compatibilityScore != null)
-                                  Text('${m.compatibilityScore}% compatible', style: TextStyle(color: SoulSyncColors.coral500, fontSize: 13)),
+                                const Icon(Icons.favorite_border, size: 48, color: SoulSyncColors.peach400),
+                                const SizedBox(height: 12),
+                                Text('No matches yet', style: Theme.of(context).textTheme.titleLarge),
+                                const SizedBox(height: 8),
+                                Text('Start swiping to find your match!', style: TextStyle(color: SoulSyncColors.warm600)),
                               ],
                             ),
                           ),
-                          const Icon(Icons.chat_bubble_outline, color: SoulSyncColors.coral400),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+                        );
+                      }
+                      return ListView.builder(
+                        itemCount: matches.length,
+                        itemBuilder: (context, index) {
+                          final m = matches[index];
+                          final otherUser = m.userReceiver ?? m.userInitiator;
+                          return FriendlyCard(
+                            padding: const EdgeInsets.all(12),
+                            onTap: () {
+                              if (otherUser != null) {
+                                Navigator.pushNamed(context, '/chat', arguments: {'userId': otherUser.id, 'name': otherUser.name});
+                              }
+                            },
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 28,
+                                  backgroundColor: SoulSyncColors.coral200,
+                                  child: otherUser?.photos.isNotEmpty == true
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(28),
+                                          child: CachedNetworkImage(imageUrl: otherUser!.photos.first, width: 56, height: 56, fit: BoxFit.cover),
+                                        )
+                                      : Text(otherUser?.name[0].toUpperCase() ?? '?', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(otherUser?.name ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                                      if (m.compatibilityScore != null)
+                                        Text('${m.compatibilityScore}% compatible', style: TextStyle(color: SoulSyncColors.coral500, fontSize: 13)),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(Icons.chat_bubble_outline, color: SoulSyncColors.coral400),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -633,11 +664,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
           border: Border.all(color: bgColor.withValues(alpha: 0.3)),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(emoji, style: const TextStyle(fontSize: 20)),
             const SizedBox(height: 4),
-            Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: SoulSyncColors.warm800, fontSize: 14)),
-            Text(label, style: TextStyle(color: SoulSyncColors.warm600, fontSize: 11)),
+            Text(
+              value,
+              style: TextStyle(fontWeight: FontWeight.bold, color: SoulSyncColors.warm800, fontSize: 14),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+            Text(
+              label,
+              style: TextStyle(color: SoulSyncColors.warm600, fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -659,7 +703,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Icon(icon, color: color, size: 20),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(color: SoulSyncColors.warm800, fontWeight: FontWeight.w600, fontSize: 13)),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(color: SoulSyncColors.warm800, fontWeight: FontWeight.w600, fontSize: 13),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),

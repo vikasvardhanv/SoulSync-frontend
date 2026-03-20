@@ -24,11 +24,18 @@ class Match {
   });
 
   factory Match.fromJson(Map<String, dynamic> json) {
+    double? parseFiniteDouble(dynamic value) {
+      if (value == null) return null;
+      final parsed = value is num ? value.toDouble() : double.tryParse(value.toString());
+      if (parsed == null || !parsed.isFinite || parsed.isNaN) return null;
+      return parsed;
+    }
+
     return Match(
       id: json['id'] ?? '',
       userInitiatorId: json['userInitiatorId'] ?? json['user_initiator_id'] ?? '',
       userReceiverId: json['userReceiverId'] ?? json['user_receiver_id'] ?? '',
-      compatibilityScore: json['compatibilityScore']?.toDouble() ?? json['compatibility_score']?.toDouble(),
+      compatibilityScore: parseFiniteDouble(json['compatibilityScore']) ?? parseFiniteDouble(json['compatibility_score']),
       status: json['status'] ?? 'pending',
       createdAt: json['createdAt'] ?? json['created_at'] ?? '',
       updatedAt: json['updatedAt'] ?? json['updated_at'] ?? '',

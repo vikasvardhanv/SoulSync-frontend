@@ -24,14 +24,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: SoulSyncColors.warm700),
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                        color: SoulSyncColors.warm700,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
-                    Expanded(child: Text('Settings', style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center)),
+                    Expanded(
+                      child: Text(
+                        'Settings',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                     const SizedBox(width: 48),
                   ],
                 ),
@@ -46,13 +58,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Account', style: Theme.of(context).textTheme.titleLarge),
+                            Text(
+                              'Account',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
                             const SizedBox(height: 8),
-                            _settingsTile(Icons.email_outlined, 'Email', user?.email ?? 'Not set'),
+                            _settingsTile(
+                              Icons.email_outlined,
+                              'Email',
+                              user?.email ?? 'Not set',
+                            ),
                             const Divider(),
-                            _settingsTile(Icons.lock_outline, 'Change Password', 'Update your password', onTap: _showChangePasswordDialog),
+                            _settingsTile(
+                              Icons.lock_outline,
+                              'Change Password',
+                              'Update your password',
+                              onTap: _showChangePasswordDialog,
+                            ),
                             const Divider(),
-                            _settingsTile(Icons.workspace_premium, 'Subscription', user?.hasPremium == true ? 'Premium' : 'Free', onTap: () => Navigator.pushNamed(context, '/payment')),
+                            _settingsTile(
+                              Icons.workspace_premium,
+                              'Subscription',
+                              user?.hasPremium == true ? 'Premium' : 'Free',
+                              onTap:
+                                  () =>
+                                      Navigator.pushNamed(context, '/payment'),
+                            ),
                           ],
                         ),
                       ),
@@ -63,13 +94,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Preferences', style: Theme.of(context).textTheme.titleLarge),
+                            Text(
+                              'Preferences',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
                             const SizedBox(height: 8),
-                            _settingsTile(Icons.notifications_outlined, 'Notifications', 'Push notifications'),
+                            _settingsTile(
+                              Icons.notifications_outlined,
+                              'Notifications',
+                              'Push notifications',
+                            ),
                             const Divider(),
-                            _settingsTile(Icons.location_on_outlined, 'Location', user?.location ?? 'Not set'),
+                            _settingsTile(
+                              Icons.location_on_outlined,
+                              'Location',
+                              user?.location ?? 'Not set',
+                            ),
                             const Divider(),
-                            _settingsTile(Icons.visibility_outlined, 'Profile Visibility', 'Visible to matches'),
+                            _settingsTile(
+                              Icons.shield_outlined,
+                              'Boundaries',
+                              'Deal-breakers and must-haves',
+                              onTap:
+                                  () => Navigator.pushNamed(
+                                    context,
+                                    '/boundaries',
+                                  ),
+                            ),
+                            const Divider(),
+                            _settingsTile(
+                              Icons.visibility_outlined,
+                              'Profile Visibility',
+                              'Visible to matches',
+                            ),
                           ],
                         ),
                       ),
@@ -80,20 +137,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('About', style: Theme.of(context).textTheme.titleLarge),
+                            Text(
+                              'About',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
                             const SizedBox(height: 8),
-                            _settingsTile(Icons.info_outline, 'Version', '1.0.0'),
+                            _settingsTile(
+                              Icons.info_outline,
+                              'Version',
+                              '1.0.0',
+                            ),
                             const Divider(),
                             _settingsTile(
-                              Icons.description_outlined, 
-                              'Terms of Service', 
+                              Icons.description_outlined,
+                              'Terms of Service',
                               '',
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => LegalScreen(
-                                    title: 'Terms of Service',
-                                    content: '''
+                              onTap:
+                                  () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => LegalScreen(
+                                            title: 'Terms of Service',
+                                            content: '''
 **Terms of Service**
 
 Welcome to SoulSync via Soul Sync UI ("Application"). By using our Application and website, you agree to these terms.
@@ -119,21 +185,23 @@ The Application is provided "as is" without warranties of any kind.
 **7. Contact**
 If you have any questions about these Terms, please contact us.
                                     ''',
+                                          ),
+                                    ),
                                   ),
-                                ),
-                              ),
                             ),
                             const Divider(),
                             _settingsTile(
-                              Icons.privacy_tip_outlined, 
-                              'Privacy Policy', 
+                              Icons.privacy_tip_outlined,
+                              'Privacy Policy',
                               '',
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => LegalScreen(
-                                    title: 'Privacy Policy',
-                                    content: '''
+                              onTap:
+                                  () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => LegalScreen(
+                                            title: 'Privacy Policy',
+                                            content: '''
 **Privacy Policy**
 
 Your privacy is important to us. This policy explains how we collect, use, and protect your information.
@@ -162,12 +230,16 @@ We may use third-party services for payments and analytics. These services have 
 **6. Changes to This Policy**
 We may update this policy from time to time. We will notify you of any changes by posting the new policy on this page.
                                     ''',
+                                          ),
+                                    ),
                                   ),
-                                ),
-                              ),
                             ),
                             const Divider(),
-                            _settingsTile(Icons.help_outline, 'Help & Support', ''),
+                            _settingsTile(
+                              Icons.help_outline,
+                              'Help & Support',
+                              '',
+                            ),
                           ],
                         ),
                       ),
@@ -178,7 +250,11 @@ We may update this policy from time to time. We will notify you of any changes b
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Danger Zone', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.red)),
+                            Text(
+                              'Danger Zone',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(color: Colors.red),
+                            ),
                             const SizedBox(height: 8),
                             _settingsTile(
                               Icons.logout,
@@ -215,13 +291,37 @@ We may update this policy from time to time. We will notify you of any changes b
     );
   }
 
-  Widget _settingsTile(IconData icon, String title, String subtitle, {Color? color, VoidCallback? onTap}) {
+  Widget _settingsTile(
+    IconData icon,
+    String title,
+    String subtitle, {
+    Color? color,
+    VoidCallback? onTap,
+  }) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: color ?? SoulSyncColors.coral500),
-      title: Text(title, style: TextStyle(color: color ?? SoulSyncColors.warm800, fontWeight: FontWeight.w500)),
-      subtitle: subtitle.isNotEmpty ? Text(subtitle, style: TextStyle(color: SoulSyncColors.warm600, fontSize: 13)) : null,
-      trailing: onTap != null ? Icon(Icons.chevron_right, color: color ?? SoulSyncColors.warm600) : null,
+      title: Text(
+        title,
+        style: TextStyle(
+          color: color ?? SoulSyncColors.warm800,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle:
+          subtitle.isNotEmpty
+              ? Text(
+                subtitle,
+                style: TextStyle(color: SoulSyncColors.warm600, fontSize: 13),
+              )
+              : null,
+      trailing:
+          onTap != null
+              ? Icon(
+                Icons.chevron_right,
+                color: color ?? SoulSyncColors.warm600,
+              )
+              : null,
       onTap: onTap,
     );
   }
@@ -233,47 +333,78 @@ We may update this policy from time to time. We will notify you of any changes b
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Change Password'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FriendlyInput(hintText: 'Current password', controller: currentPwd, obscureText: true),
-              const SizedBox(height: 12),
-              FriendlyInput(hintText: 'New password', controller: newPwd, obscureText: true),
-            ],
+      builder:
+          (ctx) => StatefulBuilder(
+            builder:
+                (ctx, setDialogState) => AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  title: const Text('Change Password'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FriendlyInput(
+                        hintText: 'Current password',
+                        controller: currentPwd,
+                        obscureText: true,
+                      ),
+                      const SizedBox(height: 12),
+                      FriendlyInput(
+                        hintText: 'New password',
+                        controller: newPwd,
+                        obscureText: true,
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed:
+                          loading
+                              ? null
+                              : () async {
+                                setDialogState(() => loading = true);
+                                try {
+                                  await AuthService().changePassword(
+                                    currentPassword: currentPwd.text,
+                                    newPassword: newPwd.text,
+                                  );
+                                  if (ctx.mounted) {
+                                    Navigator.pop(ctx);
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Password changed!'),
+                                          backgroundColor:
+                                              SoulSyncColors.mint500,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                } catch (_) {
+                                  setDialogState(() => loading = false);
+                                }
+                              },
+                      child:
+                          loading
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Text('Update'),
+                    ),
+                  ],
+                ),
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: loading
-                  ? null
-                  : () async {
-                      setDialogState(() => loading = true);
-                      try {
-                        await AuthService().changePassword(
-                          currentPassword: currentPwd.text,
-                          newPassword: newPwd.text,
-                        );
-                        if (ctx.mounted) {
-                          Navigator.pop(ctx);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Password changed!'), backgroundColor: SoulSyncColors.mint500),
-                            );
-                          }
-                        }
-                      } catch (_) {
-                        setDialogState(() => loading = false);
-                      }
-                    },
-              child: loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Update'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -282,36 +413,58 @@ We may update this policy from time to time. We will notify you of any changes b
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('This action is permanent and cannot be undone. All your data will be deleted.'),
-            const SizedBox(height: 16),
-            FriendlyInput(hintText: 'Enter your password', controller: pwdController, obscureText: true),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              try {
-                await AuthService().deleteAccount(password: pwdController.text, confirmation: 'DELETE');
-                if (mounted) {
-                  await context.read<AuthProvider>().signOut();
-                  if (mounted) Navigator.pushReplacementNamed(context, '/welcome');
-                }
-              } catch (_) {
-                if (ctx.mounted) Navigator.pop(ctx);
-              }
-            },
-            child: const Text('Delete Forever'),
+      builder:
+          (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text(
+              'Delete Account',
+              style: TextStyle(color: Colors.red),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'This action is permanent and cannot be undone. All your data will be deleted.',
+                ),
+                const SizedBox(height: 16),
+                FriendlyInput(
+                  hintText: 'Enter your password',
+                  controller: pwdController,
+                  obscureText: true,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () async {
+                  try {
+                    await AuthService().deleteAccount(
+                      password: pwdController.text,
+                      confirmation: 'DELETE',
+                    );
+                    if (mounted) {
+                      await context.read<AuthProvider>().signOut();
+                      if (mounted) {
+                        Navigator.pushReplacementNamed(context, '/welcome');
+                      }
+                    }
+                  } catch (_) {
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                    }
+                  }
+                },
+                child: const Text('Delete Forever'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
